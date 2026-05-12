@@ -1,0 +1,7 @@
+id=sshcustom
+name=SSHCustom-Magisk
+version=v1.0.0
+versionCode=10000
+author=GoodyOG
+updateJson=https://raw.githubusercontent.com/GoodyOG/SSHCustom_Magisk/main/src/module/update.json
+description=[ stopped ] SSHCustom-Magisk v1.0.0 - SSH+Payload, 256KB accept/32KB send, circuit breaker, dashboard 127.0.0.1:9190

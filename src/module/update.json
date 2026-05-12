@@ -1,0 +1,6 @@
+{
+  "version": "v1.0.0",
+  "versionCode": 10000,
+  "zipUrl": "https://github.com/GoodyOG/SSHCustom_Magisk/releases/latest/download/SSHCustom-Magisk-v1.0.0.zip",
+  "changelog": "v1.0.0: unified versioning, arm64+armv7 packaging, modernized dashboard UI, and runtime hardening updates."
+}

@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="en" data-theme-resolved="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
+  <title>SSHCustom-Magisk</title>
+  <style>
+    :root {
+      --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --surface: #111318;
+      --on-surface: #e3e2e8;
+      --on-variant: #c5c6d0;
+      --surface-low: #191b20;
+      --surface-mid: #1d2025;
+      --surface-high: #282a30;
+      --surface-highest: #33353b;
+      --primary: #adc6ff;
+      --on-primary-container: #dbe5ff;
+      --primary-container: #284777;
+      --secondary: #bdc7dc;
+      --secondary-container: #3f4759;
+      --on-secondary-container: #dce5f9;
+      --tertiary: #dcc1dd;
+      --tertiary-container: #573e5b;
+      --error: #ffb4ab;
+      --error-container: #93000a;
+      --on-error-container: #ffdad6;
+      --outline: #8f919a;
+      --good: #9bd67d;
+      --warn: #f4c66a;
+      --small: 8px;
+      --large: 20px;
+      --full: 9999px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; margin: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--surface);
+      color: var(--on-surface);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+
+    .app-layout { min-height: 100vh; display: flex; flex-direction: column; }
+    .app-top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      min-height: 56px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+    }
+    .app-title { margin: 0; font-size: 1.25rem; font-weight: 600; letter-spacing: 0.0125em; }
+    .spacer { flex: 1; }
+    .network-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--tertiary);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+    .network-chip.offline { color: var(--error); }
+
+    #pages {
+      width: min(100%, 860px);
+      margin: 0 auto;
+      padding: 16px 16px 96px;
+    }
+    section:not([hidden]) {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: page-enter 350ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    @keyframes page-enter {
+      from { opacity: 0; transform: translateY(16px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .card {
+      border-radius: var(--large);
+      background: var(--surface-high);
+      color: var(--on-surface);
+      overflow: hidden;
+    }
+    .hero-card { background: var(--surface-low); }
+    .hero-card__body {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+    }
+    .hero-icon, .li-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      flex-shrink: 0;
+      font-size: 0.8125rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+    .li-icon { width: 40px; height: 40px; }
+    .hero-title { margin: 0; font-size: 1rem; font-weight: 700; }
+    .hero-subtitle {
+      margin: 2px 0 0;
+      color: var(--on-variant);
+      font-size: 0.8125rem;
+      line-height: 1.4;
+    }
+    .chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      padding: 4px 12px;
+      border-radius: var(--full);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      background: var(--surface-highest);
+      color: var(--on-surface);
+      white-space: nowrap;
+    }
+    .chip.primary { background: var(--primary-container); color: var(--on-primary-container); }
+    .chip.warn { background: var(--tertiary-container); color: var(--on-surface); }
+    .chip.error { background: var(--error-container); color: var(--on-error-container); }
+
+    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .md3-tonal, .md3-filled, .md3-text {
+      min-height: 44px;
+      border: none;
+      border-radius: var(--full);
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0 18px;
+      color: var(--on-secondary-container);
+      background: var(--secondary-container);
+    }
+    .md3-filled { background: var(--primary); color: #10203a; }
+    .md3-text { background: transparent; color: var(--primary); min-height: 36px; }
+    .md3-danger { background: var(--error-container); color: var(--on-error-container); }
+    .md3-tonal:disabled, .md3-filled:disabled, .md3-text:disabled { opacity: 0.45; pointer-events: none; }
+
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .info-card {
+      min-height: 96px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: var(--surface-highest);
+    }
+    .info-card.primary { background: var(--primary-container); color: var(--on-primary-container); }
+    .info-label { margin: 0; color: inherit; font-size: 0.875rem; font-weight: 700; }
+    .info-value {
+      margin: 0;
+      color: inherit;
+      font-size: 1.125rem;
+      font-weight: 700;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+    .supporting-text {
+      font-size: 0.8125rem;
+      color: var(--secondary);
+      line-height: 1.4;
+    }
+
+    .section-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--primary);
+      padding: 4px 14px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 8px 0 0;
+    }
+    .list-container {
+      width: 100%;
+      border-radius: var(--large);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: clip;
+    }
+    .list-item {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface-high);
+      padding: 14px 16px;
+      border-radius: 12px;
+    }
+    .list-item-content { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .toggle-text { font-size: 1rem; font-weight: 700; line-height: 1.3; }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .select-shell, .field, .textarea {
+      width: 100%;
+      min-height: 52px;
+      border: 1px solid var(--outline);
+      border-radius: 14px;
+      padding: 0 16px;
+      color: var(--on-surface);
+      background: transparent;
+      outline: none;
+    }
+    .textarea { min-height: 100px; padding: 12px 16px; resize: vertical; font-family: "Courier New", monospace; }
+    .field-label { margin: 0 0 6px; color: var(--secondary); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field-full { grid-column: 1 / -1; }
+
+    .switch {
+      width: 52px;
+      height: 32px;
+      border: none;
+      border-radius: var(--full);
+      background: var(--surface-highest);
+      padding: 4px;
+      display: flex;
+      justify-content: flex-start;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .switch.on { justify-content: flex-end; background: var(--primary-container); }
+    .switch::before {
+      content: "";
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--on-variant);
+    }
+    .switch.on::before { background: var(--on-primary-container); }
+
+    .terminal {
+      background: var(--surface-high);
+      border-radius: var(--small);
+      padding: 12px;
+      font-family: "Courier New", monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: var(--on-surface);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 52vh;
+      overflow: auto;
+    }
+    .runtime-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .runtime-tabs .chip { cursor: pointer; }
+
+    .nav-bar {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 6px;
+      border-radius: var(--full);
+      background: var(--surface-high);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.28);
+      z-index: 30;
+      max-width: calc(100vw - 20px);
+      overflow-x: auto;
+    }
+    .nav-tab {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 12px 18px;
+      border: none;
+      background: transparent;
+      border-radius: var(--full);
+      color: var(--on-variant);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .nav-tab.active {
+      gap: 10px;
+      padding: 12px 24px 12px 18px;
+      background: var(--secondary-container);
+      color: var(--on-secondary-container);
+    }
+    .nav-icon { font-size: 0.9rem; font-weight: 900; }
+    .nav-label {
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      transition: opacity 0.2s ease 0.08s;
+    }
+    .nav-tab.active .nav-label { max-width: 160px; opacity: 1; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(0,0,0,0.62);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: min(100%, 820px);
+      max-height: 92vh;
+      overflow: auto;
+      border-radius: 28px 28px 0 0;
+      background: var(--surface-high);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .modal-head { display: flex; align-items: center; gap: 12px; }
+    .modal-title { margin: 0; font-size: 1.1rem; font-weight: 800; }
+    .toast {
+      position: fixed;
+      bottom: 84px;
+      left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      min-height: 52px;
+      min-width: 288px;
+      max-width: calc(100vw - 24px);
+      padding: 14px 18px;
+      border-radius: 14px;
+      z-index: 60;
+      background: var(--surface-highest);
+      color: var(--on-surface);
+      font-size: 0.875rem;
+      font-weight: 700;
+      transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1);
+    }
+    .toast.open { transform: translateX(-50%) translateY(0); }
+    .toast.error { background: var(--error-container); color: var(--on-error-container); }
+
+    @media (max-width: 620px) {
+      #pages { padding-inline: 12px; }
+      .info-grid, .button-row, .field-grid { grid-template-columns: 1fr; }
+      .field-full { grid-column: auto; }
+      .hero-card__body { align-items: flex-start; }
+      .app-title { font-size: 1.08rem; }
+      .nav-label { display: none; }
+      .nav-tab.active { padding: 12px 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <header class="app-top-bar">
+      <h1 class="app-title">SSHCustom-Magisk</h1>
+      <div class="spacer"></div>
+      <span id="networkChip" class="network-chip">offline</span>
+    </header>
+
+    <main id="pages">
+      <section id="page-home">
+        <div class="card hero-card">
+          <div class="hero-card__body">
+            <div class="hero-icon" id="heroIcon">SSH</div>
+            <div style="flex:1;min-width:0">
+              <p class="hero-title" id="heroTitle">Daemon offline</p>
+              <p class="hero-subtitle" id="heroSubtitle">Start SSHCustom-Magisk from the Magisk or KernelSU action button.</p>
+              <div class="chip-row" id="heroChips"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button class="md3-filled" onclick="controlRuntime('restart')">Restart Tunnel</button>
+          <button class="md3-tonal md3-danger" onclick="controlRuntime('stop')">Stop and Clean</button>
+        </div>
+
+        <div class="info-grid">
+          <div class="card info-card primary">
+            <p class="info-label">Tunnel Exit IP</p>
+            <p class="info-value" id="tunnelIp">Unavailable</p>
+            <span class="supporting-text" id="tunnelIpMeta">Waiting for tunnel lookup</span>
+          </div>
+          <div class="card info-card">
+            <p class="info-label">Device Public IP</p>
+            <p class="info-value" id="deviceIp">Unavailable</p>
+            <span class="supporting-text" id="deviceIpMeta">Waiting for device lookup</span>
+          </div>
+          <div class="card info-card">
+            <p class="info-label">Runtime</p>
+            <p class="info-value" id="runtimeValue">--</p>
+            <span class="supporting-text" id="runtimeMeta">No active session</span>
+          </div>
+          <div class="card info-card">
+            <p class="info-label">Performance</p>
+            <p class="info-value" id="perfValue">--</p>
+            <span class="supporting-text" id="perfMeta">CPU and memory unavailable</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-profiles" hidden>
+        <div class="button-row">
+          <button class="md3-filled" onclick="openProfileEditor('')">New Profile</button>
+          <button class="md3-tonal" onclick="loadProfiles()">Refresh Profiles</button>
+        </div>
+        <h2 class="section-pill">Profiles</h2>
+        <div class="list-container" id="profilesList"></div>
+      </section>
+
+      <section id="page-network" hidden>
+        <h2 class="section-pill">DNS</h2>
+        <div class="list-container">
+          <div class="list-item">
+            <div class="li-icon">DNS</div>
+            <div class="list-item-content" style="flex:1">
+              <div class="toggle-text">DNS Mode</div>
+              <span class="supporting-text">Applies to SSHCustom endpoint resolution. Device DNS remains default.</span>
+            </div>
+            <select id="dnsMode" class="select-shell" style="max-width:220px">
+              <option value="device">Device default</option>
+              <option value="google">Google DNS</option>
+              <option value="cloudflare">Cloudflare DNS</option>
+              <option value="custom">Custom DNS</option>
+            </select>
+          </div>
+          <div class="list-item" id="customDnsRow" hidden>
+            <div class="li-icon">IP</div>
+            <div class="list-item-content" style="flex:1">
+              <div class="toggle-text">Custom Resolvers</div>
+              <input id="customDnsServers" class="field" placeholder="1.1.1.1, 8.8.8.8">
+            </div>
+          </div>
+        </div>
+
+        <h2 class="section-pill">Sharing</h2>
+        <div class="list-container">
+          <div class="list-item">
+            <div class="li-icon">HS</div>
+            <div class="list-item-content">
+              <div class="toggle-text">Share Hotspot TCP Tunnel</div>
+              <span class="supporting-text">Enabled by default for tethered clients over IPv4 TCP.</span>
+            </div>
+            <div class="spacer"></div>
+            <button id="hotspotSwitch" class="switch" onclick="toggleHotspot()" aria-label="Toggle hotspot"></button>
+          </div>
+          <div class="list-item">
+            <div class="li-icon">TP</div>
+            <div class="list-item-content">
+              <div class="toggle-text">Transparent IPv4 TCP</div>
+              <span class="supporting-text" id="transparentMeta">iptables REDIRECT status unavailable</span>
+            </div>
+          </div>
+          <div class="list-item">
+            <div class="li-icon">S5</div>
+            <div class="list-item-content">
+              <div class="toggle-text">SOCKS5 Local Proxy</div>
+              <span class="supporting-text" id="socksMeta">SOCKS status unavailable</span>
+            </div>
+          </div>
+        </div>
+        <button class="md3-filled" onclick="saveNetwork()">Apply Network Settings</button>
+      </section>
+
+      <section id="page-runtime" hidden>
+        <div class="info-grid">
+          <div class="card info-card primary">
+            <p class="info-label">SSH Pool</p>
+            <p class="info-value" id="poolValue">--</p>
+            <span class="supporting-text" id="poolMeta">pool unavailable</span>
+          </div>
+          <div class="card info-card">
+            <p class="info-label">Streams</p>
+            <p class="info-value" id="streamsValue">--</p>
+            <span class="supporting-text" id="streamsMeta">no active streams</span>
+          </div>
+          <div class="card info-card">
+            <p class="info-label">CPU</p>
+            <p class="info-value" id="cpuValue">--</p>
+            <span class="supporting-text">daemon process</span>
+          </div>
+          <div class="card info-card">
+            <p class="info-label">Memory</p>
+            <p class="info-value" id="memoryValue">--</p>
+            <span class="supporting-text" id="memoryMeta">RSS</span>
+          </div>
+          <div class="card info-card">
+            <p class="info-label">Route</p>
+            <p class="info-value" id="routeValue">--</p>
+            <span class="supporting-text" id="routeMeta">gateway unavailable</span>
+          </div>
+          <div class="card info-card">
+            <p class="info-label">Resolver</p>
+            <p class="info-value" id="resolverValue">--</p>
+            <span class="supporting-text" id="resolverMeta">no DNS activity yet</span>
+          </div>
+        </div>
+        <h2 class="section-pill">Logs</h2>
+        <div class="runtime-tabs">
+          <button class="chip primary" id="coreLogTab" onclick="setLogKind('core')">Core</button>
+          <button class="chip" id="controlLogTab" onclick="setLogKind('control')">Control</button>
+          <button class="md3-tonal" onclick="loadLog()">Refresh Log</button>
+        </div>
+        <pre class="terminal" id="runtimeLog">Loading log...</pre>
+      </section>
+
+      <section id="page-settings" hidden>
+        <h2 class="section-pill">Compatibility</h2>
+        <div class="list-container">
+          <div class="list-item">
+            <div class="li-icon">TLS</div>
+            <div class="list-item-content">
+              <div class="toggle-text">Permissive TLS/SNI</div>
+              <span class="supporting-text">Kept for carrier payload compatibility.</span>
+            </div>
+            <div class="spacer"></div>
+            <span class="chip warn">compat</span>
+          </div>
+          <div class="list-item">
+            <div class="li-icon">SSH</div>
+            <div class="list-item-content">
+              <div class="toggle-text">Permissive SSH Host Keys</div>
+              <span class="supporting-text">Kept for maximum server compatibility.</span>
+            </div>
+            <div class="spacer"></div>
+            <span class="chip warn">compat</span>
+          </div>
+        </div>
+
+        <h2 class="section-pill">Paths</h2>
+        <div class="terminal" id="pathsBox">Loading paths...</div>
+      </section>
+    </main>
+
+    <nav class="nav-bar" aria-label="Main navigation">
+      <button class="nav-tab active" data-page="home" onclick="showPage('home')"><span class="nav-icon">H</span><span class="nav-label">Home</span></button>
+      <button class="nav-tab" data-page="profiles" onclick="showPage('profiles')"><span class="nav-icon">P</span><span class="nav-label">Profiles</span></button>
+      <button class="nav-tab" data-page="network" onclick="showPage('network')"><span class="nav-icon">N</span><span class="nav-label">Network</span></button>
+      <button class="nav-tab" data-page="runtime" onclick="showPage('runtime')"><span class="nav-icon">R</span><span class="nav-label">Runtime</span></button>
+      <button class="nav-tab" data-page="settings" onclick="showPage('settings')"><span class="nav-icon">S</span><span class="nav-label">Settings</span></button>
+    </nav>
+  </div>
+
+  <div class="modal-backdrop" id="profileModal" onclick="closeModalOnBackdrop(event)">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title" id="profileModalTitle">Profile</h3>
+        <div class="spacer"></div>
+        <button class="md3-text" onclick="closeProfileEditor()">Close</button>
+      </div>
+      <div class="field-grid">
+        <div>
+          <p class="field-label">Name</p>
+          <input class="field" id="pfName">
+        </div>
+        <div>
+          <p class="field-label">Mode</p>
+          <select class="select-shell" id="pfMode" onchange="renderProfileModeFields()">
+            <option value="direct">Direct SSH</option>
+            <option value="http_proxy">HTTP Proxy</option>
+            <option value="tls_sni">TLS/SNI</option>
+            <option value="http_proxy_tls_sni">HTTP Proxy + TLS/SNI</option>
+          </select>
+        </div>
+        <div>
+          <p class="field-label">SSH Host</p>
+          <input class="field" id="pfHost">
+        </div>
+        <div>
+          <p class="field-label">SSH Port</p>
+          <input class="field" id="pfPort" inputmode="numeric">
+        </div>
+        <div>
+          <p class="field-label">Username</p>
+          <input class="field" id="pfUser">
+        </div>
+        <div>
+          <p class="field-label">Password</p>
+          <input class="field" id="pfPass" type="password">
+        </div>
+        <div class="field-full">
+          <p class="field-label">Fallback IPs</p>
+          <input class="field" id="pfFallback" placeholder="comma separated">
+        </div>
+        <div id="proxyFields">
+          <p class="field-label">Proxy Host</p>
+          <input class="field" id="pfProxyHost">
+        </div>
+        <div id="proxyPortField">
+          <p class="field-label">Proxy Port</p>
+          <input class="field" id="pfProxyPort" inputmode="numeric">
+        </div>
+        <div id="tlsFields" class="field-full">
+          <p class="field-label">SNI Server Name</p>
+          <input class="field" id="pfSni">
+        </div>
+        <div class="field-full">
+          <div class="list-item" style="padding-inline:0;background:transparent">
+            <div class="list-item-content">
+              <div class="toggle-text">Payload Injection</div>
+              <span class="supporting-text">Use payload before SSH or after proxy socket depending on mode.</span>
+            </div>
+            <div class="spacer"></div>
+            <button id="payloadSwitch" class="switch" onclick="togglePayload()"></button>
+          </div>
+        </div>
+        <div class="field-full" id="payloadFields">
+          <p class="field-label">Payload Template</p>
+          <textarea class="textarea" id="pfPayload"></textarea>
+        </div>
+      </div>
+      <div class="button-row">
+        <button class="md3-tonal" onclick="saveProfile(false,false)">Save</button>
+        <button class="md3-filled" onclick="saveProfile(true,false)">Save and Use</button>
+      </div>
+      <button class="md3-tonal" onclick="saveProfile(true,true)">Save, Use, and Restart</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API = (location.protocol === 'file:' || location.port !== '9190') ? 'http://127.0.0.1:9190' : location.origin;
+    let statusData = null;
+    let configData = null;
+    let profilesData = { selected_id: '', profiles: [] };
+    let currentPage = 'home';
+    let currentLog = 'core';
+    let profileEditId = '';
+    let toastTimer = null;
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    async function api(path, options = {}) {
+      const res = await fetch(API + path, { signal: AbortSignal.timeout(options.timeout || 8000), ...options });
+      if (!res.ok) throw new Error(await res.text() || res.status);
+      return res.json();
+    }
+    async function v1(path, options = {}) {
+      const envelope = await api('/api/v1' + path, options);
+      if (!envelope.ok) throw new Error(envelope.error || 'API error');
+      return envelope.data;
+    }
+    async function postV1(path, data, timeout = 10000) {
+      return v1(path, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data), timeout });
+    }
+
+    function toast(message, kind = '') {
+      const el = $('toast');
+      el.textContent = message;
+      el.className = 'toast open' + (kind ? ' ' + kind : '');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('open'), 4200);
+    }
+
+    function fmtBytes(n) {
+      if (!n) return '--';
+      if (n >= 1073741824) return (n / 1073741824).toFixed(1) + ' GB';
+      if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
+      if (n >= 1024) return (n / 1024).toFixed(0) + ' KB';
+      return n + ' B';
+    }
+    function fmtUptime(s) {
+      s = Number(s || 0);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      if (h) return h + 'h ' + m + 'm';
+      if (m) return m + 'm ' + sec + 's';
+      return sec + 's';
+    }
+    function ipMeta(d) {
+      if (!d) return 'not checked';
+      if (!d.ok) return d.error || 'lookup failed';
+      const loc = [d.city, d.region, d.country].filter(Boolean).join(', ') || 'unknown location';
+      const net = [d.isp, d.asn].filter(Boolean).join(' - ') || 'unknown network';
+      return loc + ' / ' + net + (d.cached ? ' / cached' : '');
+    }
+
+    function showPage(page) {
+      currentPage = page;
+      for (const id of ['home','profiles','network','runtime','settings']) {
+        $('page-' + id).hidden = id !== page;
+      }
+      document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.page === page));
+      if (page === 'profiles') loadProfiles();
+      if (page === 'runtime') { loadDiagnostics(); loadLog(); }
+      if (page === 'settings') renderSettings();
+    }
+
+    async function loadStatus() {
+      try {
+        const data = await v1('/status');
+        statusData = data.runtime;
+        configData = data.config;
+        renderStatus(data);
+      } catch (e) {
+        renderOffline();
+      }
+    }
+
+    function renderStatus(data) {
+      const s = data.runtime;
+      const cfg = data.config || {};
+      const connected = !!(s.connected && s.ssh_authenticated);
+      const busy = !!(s.running && !connected);
+      $('networkChip').textContent = connected ? 'connected' : busy ? 'connecting' : 'offline';
+      $('networkChip').className = 'network-chip' + (!connected && !busy ? ' offline' : '');
+      $('heroIcon').textContent = connected ? 'ON' : busy ? '...' : 'OFF';
+      $('heroTitle').textContent = connected ? 'Tunnel Connected' : busy ? (s.state || 'Connecting') : 'Daemon offline';
+      $('heroSubtitle').textContent = s.last_error || s.last_event || (connected ? 'Transparent TCP and local SOCKS are available.' : 'Start SSHCustom-Magisk from the module action button.');
+      const chips = [];
+      chips.push(`<span class="chip ${connected ? 'primary' : busy ? 'warn' : 'error'}">${connected ? 'connected' : busy ? 'connecting' : 'offline'}</span>`);
+      if (s.selected_profile) chips.push(`<span class="chip">profile: ${esc(s.selected_profile)}</span>`);
+      if (s.dns_mode || (cfg.dns && cfg.dns.mode)) chips.push(`<span class="chip">dns: ${esc(s.dns_mode || cfg.dns.mode)}</span>`);
+      if (s.interface) chips.push(`<span class="chip">via: ${esc(s.interface)}</span>`);
+      $('heroChips').innerHTML = chips.join('');
+      $('runtimeValue').textContent = s.uptime_seconds ? fmtUptime(s.uptime_seconds) : '--';
+      $('runtimeMeta').textContent = [s.selected_mode, s.transport_chain].filter(Boolean).join(' / ') || 'No active session';
+      $('perfValue').textContent = (s.cpu_percent || 0).toFixed(1) + '% CPU';
+      $('perfMeta').textContent = 'RSS ' + fmtBytes(s.memory_rss_bytes) + ', system mem ' + (s.system_mem_used_percent || 0).toFixed(0) + '%';
+      $('cpuValue').textContent = (s.cpu_percent || 0).toFixed(1) + '%';
+      $('memoryValue').textContent = fmtBytes(s.memory_rss_bytes);
+      $('memoryMeta').textContent = 'system memory ' + (s.system_mem_used_percent || 0).toFixed(0) + '% used';
+      $('poolValue').textContent = (s.pool_healthy || 0) + '/' + (s.pool_size || 0);
+      $('poolMeta').textContent = (s.pool_reconnecting || 0) + ' reconnecting' + (s.pool_last_error ? ' / ' + s.pool_last_error : '');
+      $('streamsValue').textContent = String(s.pool_streams || 0);
+      $('streamsMeta').textContent = 'target ' + (s.pool_max_streams || '--') + ' streams per SSH';
+      $('routeValue').textContent = s.interface || '--';
+      $('routeMeta').textContent = s.gateway ? 'gateway ' + s.gateway : (s.source_ip || 'gateway unavailable');
+      $('resolverValue').textContent = s.resolver_method || s.dns_mode || '--';
+      $('resolverMeta').textContent = (s.resolved_ips || []).join(', ') || 'no DNS activity yet';
+      $('transparentMeta').textContent = s.transparent_running ? 'listening on ' + (s.transparent_addr || 'transparent port') : 'not running';
+      $('socksMeta').textContent = s.socks_running ? 'listening on ' + (s.socks_addr || 'SOCKS port') : 'not running';
+      renderNetworkConfig(cfg);
+      renderSettings(data);
+    }
+
+    function renderOffline() {
+      statusData = null;
+      $('networkChip').textContent = 'offline';
+      $('networkChip').className = 'network-chip offline';
+      $('heroIcon').textContent = 'OFF';
+      $('heroTitle').textContent = 'Daemon offline';
+      $('heroSubtitle').textContent = 'Start SSHCustom-Magisk from the Magisk or KernelSU action button.';
+      $('heroChips').innerHTML = '<span class="chip error">offline</span>';
+    }
+
+    async function loadPublicIP(refresh = false) {
+      try {
+        const data = await v1('/network/public-ip' + (refresh ? '?refresh=1' : ''), { timeout: 15000 });
+        $('deviceIp').textContent = data.device && data.device.ok ? data.device.ip : 'Unavailable';
+        $('deviceIpMeta').textContent = ipMeta(data.device);
+        $('tunnelIp').textContent = data.tunnel && data.tunnel.ok ? data.tunnel.ip : 'Unavailable';
+        $('tunnelIpMeta').textContent = ipMeta(data.tunnel);
+      } catch (e) {
+        $('deviceIpMeta').textContent = 'lookup unavailable';
+        $('tunnelIpMeta').textContent = 'lookup unavailable';
+      }
+    }
+
+    async function controlRuntime(action) {
+      try {
+        await postV1('/control', { action }, 10000);
+        toast(action === 'stop' ? 'Stopping and cleaning rules...' : 'Restarting tunnel...');
+        setTimeout(loadStatus, 2500);
+      } catch (e) {
+        toast('Control failed: ' + e.message, 'error');
+      }
+    }
+
+    function renderNetworkConfig(cfg) {
+      if (!cfg) return;
+      const dns = cfg.dns || {};
+      $('dnsMode').value = dns.mode || 'device';
+      $('customDnsRow').hidden = $('dnsMode').value !== 'custom';
+      $('customDnsServers').value = (dns.servers || []).join(', ');
+      const hotspot = cfg.hotspot || {};
+      $('hotspotSwitch').classList.toggle('on', !!(hotspot.enabled && hotspot.tcp));
+    }
+    $('dnsMode').addEventListener('change', () => $('customDnsRow').hidden = $('dnsMode').value !== 'custom');
+    function toggleHotspot() { $('hotspotSwitch').classList.toggle('on'); }
+    async function saveNetwork() {
+      try {
+        const mode = $('dnsMode').value;
+        const enabled = $('hotspotSwitch').classList.contains('on');
+        const dns = { mode };
+        if (mode === 'custom') dns.servers = $('customDnsServers').value.split(',').map(s => s.trim()).filter(Boolean);
+        await postV1('/config', { dns, hotspot: { enabled, tcp: enabled, dns: false }, restart: true }, 12000);
+        toast('Network settings saved. Restarting to apply...');
+        setTimeout(loadStatus, 4000);
+      } catch (e) {
+        toast('Network save failed: ' + e.message, 'error');
+      }
+    }
+
+    async function loadProfiles() {
+      try {
+        profilesData = await v1('/profiles');
+        renderProfiles();
+      } catch (e) {
+        $('profilesList').innerHTML = '<div class="list-item"><div class="list-item-content"><div class="toggle-text">Profiles unavailable</div><span class="supporting-text">Daemon is offline or profiles.json cannot be read.</span></div></div>';
+      }
+    }
+    function modeName(mode) {
+      return ({direct:'Direct SSH', http_proxy:'HTTP Proxy', tls_sni:'TLS/SNI', http_proxy_tls_sni:'Proxy + TLS/SNI'})[mode] || mode || '--';
+    }
+    function renderProfiles() {
+      const list = profilesData.profiles || [];
+      if (!list.length) {
+        $('profilesList').innerHTML = '<div class="list-item"><div class="list-item-content"><div class="toggle-text">No profiles</div><span class="supporting-text">Create a profile to start tunneling.</span></div></div>';
+        return;
+      }
+      $('profilesList').innerHTML = list.map((p, i) => {
+        const active = p.id === profilesData.selected_id || p.selected;
+        const host = p.ssh ? [p.ssh.host, p.ssh.port].filter(Boolean).join(':') : '';
+        return `<div class="list-item">
+          <div class="li-icon">P${i + 1}</div>
+          <div class="list-item-content" style="flex:1">
+            <div class="toggle-text truncate">${esc(p.name || p.id)}</div>
+            <span class="supporting-text truncate">${esc(host)} - ${esc(modeName(p.transport && p.transport.mode))}</span>
+          </div>
+          ${active ? '<span class="chip primary">active</span>' : `<button class="md3-tonal" onclick="selectProfile('${esc(p.id)}')">Use</button>`}
+          <button class="md3-text" onclick="openProfileEditor('${esc(p.id)}')">Edit</button>
+        </div>`;
+      }).join('');
+    }
+    async function selectProfile(id) {
+      try {
+        await postV1('/profile/select', { selected_id: id, restart: false });
+        toast('Profile selected. Restart to apply.');
+        await loadProfiles();
+      } catch (e) {
+        toast('Select failed: ' + e.message, 'error');
+      }
+    }
+
+    function openProfileEditor(id) {
+      profileEditId = id || '';
+      const p = (profilesData.profiles || []).find(x => x.id === id) || {};
+      $('profileModalTitle').textContent = id ? 'Edit Profile' : 'New Profile';
+      $('pfName').value = p.name || '';
+      $('pfMode').value = p.transport && p.transport.mode || 'direct';
+      $('pfHost').value = p.ssh && p.ssh.host || '';
+      $('pfPort').value = p.ssh && p.ssh.port || 22;
+      $('pfUser').value = p.ssh && p.ssh.username || '';
+      $('pfPass').value = p.ssh && p.ssh.password || '';
+      $('pfFallback').value = p.ssh && p.ssh.fallback_ips ? p.ssh.fallback_ips.join(', ') : '';
+      $('pfProxyHost').value = p.transport && p.transport.http_proxy && p.transport.http_proxy.host || '';
+      $('pfProxyPort').value = p.transport && p.transport.http_proxy && p.transport.http_proxy.port || 80;
+      $('pfSni').value = p.transport && p.transport.tls && p.transport.tls.server_name || '';
+      const payload = p.transport && p.transport.payload || {};
+      $('payloadSwitch').classList.toggle('on', !!payload.enabled);
+      $('pfPayload').value = payload.template || 'GET / HTTP/1.1[crlf]Host: [sni][crlf]Connection: Upgrade[crlf]Upgrade: websocket[crlf][crlf]';
+      renderProfileModeFields();
+      renderPayloadFields();
+      $('profileModal').classList.add('open');
+    }
+    function closeProfileEditor() { $('profileModal').classList.remove('open'); }
+    function closeModalOnBackdrop(e) { if (e.target === $('profileModal')) closeProfileEditor(); }
+    function renderProfileModeFields() {
+      const mode = $('pfMode').value;
+      const usesProxy = mode.includes('http_proxy');
+      const usesTLS = mode.includes('tls');
+      $('proxyFields').hidden = !usesProxy;
+      $('proxyPortField').hidden = !usesProxy;
+      $('tlsFields').hidden = !usesTLS;
+    }
+    function togglePayload() { $('payloadSwitch').classList.toggle('on'); renderPayloadFields(); }
+    function renderPayloadFields() { $('payloadFields').hidden = !$('payloadSwitch').classList.contains('on'); }
+    async function saveProfile(select, restart) {
+      try {
+        const mode = $('pfMode').value;
+        const fb = $('pfFallback').value.split(',').map(s => s.trim()).filter(Boolean);
+        const usesProxy = mode.includes('http_proxy');
+        const usesTLS = mode.includes('tls');
+        const req = {
+          id: profileEditId,
+          name: $('pfName').value.trim() || 'SSHCustom Profile',
+          select,
+          restart,
+          ssh: {
+            host: $('pfHost').value.trim(),
+            port: parseInt($('pfPort').value, 10) || 22,
+            username: $('pfUser').value.trim(),
+            password: $('pfPass').value,
+            auth_type: 'password',
+            fallback_ips: fb.length ? fb : undefined
+          },
+          transport: {
+            mode,
+            http_proxy: usesProxy ? {
+              host: $('pfProxyHost').value.trim() || $('pfHost').value.trim(),
+              port: parseInt($('pfProxyPort').value, 10) || 80,
+              connect_method: 'socket'
+            } : undefined,
+            tls: usesTLS ? {
+              enabled: true,
+              server_name: $('pfSni').value.trim() || $('pfHost').value.trim(),
+              insecure_skip_verify: true,
+              alpn: ['http/1.1']
+            } : undefined,
+            payload: {
+              enabled: $('payloadSwitch').classList.contains('on'),
+              template: $('pfPayload').value,
+              send_timing: usesProxy ? 'after_proxy_socket_before_ssh' : 'before_ssh',
+              read_response: true,
+              allow_http_status: [101, 200, 204, 302]
+            }
+          }
+        };
+        await postV1('/profile/save', req, 12000);
+        closeProfileEditor();
+        toast(restart ? 'Profile saved. Restarting...' : 'Profile saved.');
+        await loadProfiles();
+      } catch (e) {
+        toast('Profile save failed: ' + e.message, 'error');
+      }
+    }
+
+    function setLogKind(kind) {
+      currentLog = kind;
+      $('coreLogTab').classList.toggle('primary', kind === 'core');
+      $('controlLogTab').classList.toggle('primary', kind === 'control');
+      loadLog();
+    }
+    async function loadLog() {
+      try {
+        const res = await fetch(API + '/api/v1/logs/' + currentLog, { signal: AbortSignal.timeout(7000) });
+        $('runtimeLog').textContent = res.ok ? await res.text() : 'Log unavailable';
+      } catch (e) {
+        $('runtimeLog').textContent = 'Log unavailable: ' + e.message;
+      }
+    }
+
+    async function loadDiagnostics() {
+      try {
+        const d = await v1('/diagnostics');
+        const p = d.pool || {};
+        $('poolValue').textContent = (p.healthy || 0) + '/' + (p.size || 0);
+        $('poolMeta').textContent = p.capacity_hint || 'pool unavailable';
+        $('streamsValue').textContent = String(p.streams || 0);
+        $('streamsMeta').textContent = 'max target ' + (p.max_streams || '--') + ' per SSH';
+      } catch (e) {}
+    }
+
+    function renderSettings(data) {
+      const paths = data && data.paths || {};
+      $('pathsBox').textContent = Object.keys(paths).length
+        ? Object.entries(paths).map(([k,v]) => k + ': ' + v).join('\n')
+        : 'Paths are available when the daemon is online.';
+    }
+
+    async function refreshAll() {
+      await loadStatus();
+      if (currentPage === 'profiles') await loadProfiles();
+      if (currentPage === 'runtime') { await loadDiagnostics(); await loadLog(); }
+    }
+
+    loadStatus();
+    loadProfiles();
+    loadPublicIP(false);
+    loadDiagnostics();
+    loadLog();
+    setInterval(loadStatus, 3000);
+    setInterval(loadDiagnostics, 8000);
+    setInterval(() => loadPublicIP(false), 60000);
+  </script>
+</body>
+</html>

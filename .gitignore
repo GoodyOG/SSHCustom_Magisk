@@ -1,0 +1,13 @@
+dist/*
+!dist/.gitkeep
+
+*.log
+*.tmp
+*.bak
+
+/sshcustomd
+/sshcustomd-host
+/dist/sshcustomd-host
+
+node_modules/
+src/module/webroot/assets/*.map
