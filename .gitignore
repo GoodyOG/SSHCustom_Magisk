@@ -1,6 +1,5 @@
 # Build outputs
-dist/*
-!dist/.gitkeep
+dist/
 
 # Go
 *.test
@@ -9,6 +8,7 @@ sshcustomd-host
 
 # Android / Gradle
 .gradle/
+.kotlin/
 build/
 local.properties
 captures/
@@ -18,12 +18,6 @@ captures/
 *.ap_
 *.dex
 *.class
-*.jks
-*.keystore
-release/
-**/release/
-app/release/
-app/build/
 
 # IDE
 .idea/
@@ -36,7 +30,7 @@ app/build/
 .DS_Store
 Thumbs.db
 
-# Python (for scripts/)
+# Python
 __pycache__/
 *.pyc
 .venv/
@@ -45,7 +39,7 @@ __pycache__/
 *.bak
 *.tmp
 
-# Local signing material — never commit
+# Signing — never commit
 keystore.properties
 *.jks
 *.keystore

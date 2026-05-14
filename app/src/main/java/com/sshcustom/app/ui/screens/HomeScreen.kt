@@ -159,9 +159,6 @@ private fun HeroCard(runtime: RuntimeState?) {
                 if (!runtime?.selectedProfile.isNullOrBlank()) {
                     StatusChip(text = "profile: ${runtime?.selectedProfile}")
                 }
-                if (!runtime?.iface.isNullOrBlank()) {
-                    StatusChip(text = "via: ${runtime?.iface}")
-                }
             }
         }
     }
