@@ -287,7 +287,7 @@ private fun ProfileEditorDialog(
                             .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                             .fillMaxWidth(),
                     )
-                    androidx.compose.material3.ExposedDropdownMenu(expanded = modeMenu, onDismissRequest = { modeMenu = false }) {
+                    androidx.compose.material3.DropdownMenu(expanded = modeMenu, onDismissRequest = { modeMenu = false }) {
                         MODES.forEach { (id, label) ->
                             DropdownMenuItem(text = { Text(label) }, onClick = { mode = id; modeMenu = false })
                         }

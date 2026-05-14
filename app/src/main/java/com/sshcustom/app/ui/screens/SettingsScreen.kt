@@ -102,7 +102,7 @@ fun SettingsScreen(viewModel: MainViewModel, contentPadding: PaddingValues) {
                                 .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                                 .fillMaxWidth(),
                         )
-                        androidx.compose.material3.ExposedDropdownMenu(expanded = dnsMenu, onDismissRequest = { dnsMenu = false }) {
+                        androidx.compose.material3.DropdownMenu(expanded = dnsMenu, onDismissRequest = { dnsMenu = false }) {
                             DNS_MODES.forEach { (id, label) ->
                                 DropdownMenuItem(text = { Text(label) }, onClick = { dnsMode = id; dnsMenu = false })
                             }

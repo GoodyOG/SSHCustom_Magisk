@@ -15,6 +15,8 @@
 // the debug signing config so unsigned-but-installable APKs are still
 // produced — useful for contributors testing changes locally.
 
+import java.io.File
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -29,12 +31,12 @@ plugins {
 // the keystore.properties path lets a contributor sign locally without
 // editing build.gradle.kts. Both are optional — if neither is configured
 // the release build uses the Android debug keystore.
-val keystoreFile: java.io.File? = run {
+val keystoreFile: File? = run {
     val envBase64 = System.getenv("KEYSTORE_BASE64")
     if (!envBase64.isNullOrBlank()) {
         val decoded = layout.buildDirectory.file("ci-release.jks").get().asFile
         decoded.parentFile.mkdirs()
-        decoded.writeBytes(java.util.Base64.getDecoder().decode(envBase64))
+        decoded.writeBytes(Base64.getDecoder().decode(envBase64))
         return@run decoded
     }
     val local = rootProject.file("keystore.properties")

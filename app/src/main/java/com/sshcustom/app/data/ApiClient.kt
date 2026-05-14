@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resumeWithException
 
 /**
- * Thin OkHttp-backed wrapper around the daemon's /api/v1/* surface.
+ * Thin OkHttp-backed wrapper around the daemon's /api/v1 HTTP surface.
  *
  * The daemon is always on loopback so most of OkHttp's defaults are
  * unnecessary. We disable the connection pool's keep-alive entirely
@@ -63,8 +63,9 @@ object ApiClient {
     fun initialize(context: Context) {
         // Force IPv4 so the loopback connection never hangs trying ::1
         // when Android exposes a v6 loopback that the daemon isn't bound to.
-        val v4Dns = okhttp3.Dns { hostname ->
-            InetAddress.getAllByName(hostname).filter { it.address.size == 4 }
+        val v4Dns = object : okhttp3.Dns {
+            override fun lookup(hostname: String): List<InetAddress> =
+                InetAddress.getAllByName(hostname).filter { it.address.size == 4 }
         }
 
         http = OkHttpClient.Builder()
