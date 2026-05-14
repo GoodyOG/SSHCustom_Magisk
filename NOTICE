@@ -1,0 +1,61 @@
+SSHCustom_Magisk
+Copyright 2024-2026 GoodyOG
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may
+not use this software except in compliance with the License. You may
+obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+The companion Android app under /app is licensed separately under the
+GNU General Public License v3.0 (see app/LICENSE) because it incorporates
+patterns from KernelSU-Next, which is itself GPL-3.0.
+
+================================================================================
+Third-party components
+================================================================================
+
+This product includes software developed by third parties:
+
+1. golang.org/x/crypto
+   https://pkg.go.dev/golang.org/x/crypto
+   Copyright 2009 The Go Authors. All rights reserved.
+   Licensed under the BSD 3-Clause license.
+   Vendored in third_party/golang.org/x/crypto with local modifications;
+   see third_party/PATCHES.md for the change rationale.
+
+2. KernelSU-Next
+   https://github.com/KernelSU-Next/KernelSU-Next
+   Licensed under GPL-3.0.
+   The companion Android app's structure (Compose UI patterns, libsu
+   integration approach, manifest setup) draws from KernelSU-Next
+   v1.0.6. No source files are copied verbatim, but the architectural
+   patterns originate there.
+
+3. libsu
+   https://github.com/topjohnwu/libsu
+   Copyright 2017-2024 John Wu (topjohnwu)
+   Licensed under the Apache License 2.0.
+   Used by the companion app for root command execution.
+
+4. OkHttp & okhttp-sse
+   https://square.github.io/okhttp/
+   Copyright 2019-2024 Square, Inc.
+   Licensed under the Apache License 2.0.
+
+5. Jetpack Compose / AndroidX
+   https://developer.android.com/jetpack/androidx
+   Copyright Google LLC.
+   Licensed under the Apache License 2.0.
+
+6. Kotlin & kotlinx.serialization & kotlinx.coroutines
+   https://kotlinlang.org/
+   Copyright 2010-2024 JetBrains s.r.o.
+   Licensed under the Apache License 2.0.
+
+================================================================================
+
+For component-level license texts, see:
+  - LICENSE                       (Apache-2.0 for the module + Go daemon)
+  - app/LICENSE                   (GPL-3.0 for the companion Android app)
+  - third_party/PATCHES.md        (notes on x/crypto modifications)
