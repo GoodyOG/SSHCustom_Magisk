@@ -18,7 +18,7 @@ val AppTypography = Typography(
         fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
-        letterSpacing = 0.0125.em,
+        letterSpacing = 0.0125f.em,
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.Default,
@@ -52,6 +52,6 @@ val AppTypography = Typography(
         fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        letterSpacing = 0.05.em,
+        letterSpacing = 0.05f.em,
     ),
 )

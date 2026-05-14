@@ -17,8 +17,15 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Required to register a Quick Settings Tile (added in PR 5). The
-         declaration is here now so the manifest doesn't churn between PRs. -->
+    <!-- BootReceiver. Auto-starts the monitor service after device boot
+         so the user has live status without needing to open the app first.
+         The Magisk module's service.sh handles the actual daemon start
+         based on the autostart marker file. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Required to register a Quick Settings Tile (TunnelTileService).
+         BIND_QUICK_SETTINGS_TILE is automatically held by the system on
+         tile activation; it just needs to be declared. -->
     <uses-permission android:name="android.permission.BIND_QUICK_SETTINGS_TILE"
         tools:ignore="ProtectedPermissions" />
 
@@ -53,6 +60,32 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Persistent SSH tunnel monitor surface for the SSHCustom Magisk module" />
         </service>
+
+        <service
+            android:name=".service.TunnelTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <!-- ACTIVE = the daemon polls itself; we only refresh on
+                 onStartListening, which is when the shade opens. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="false" />
+        </service>
+
+        <receiver
+            android:name=".service.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

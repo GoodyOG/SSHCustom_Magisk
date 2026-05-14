@@ -1,5 +1,6 @@
 package com.sshcustom.app.ui
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,7 +9,9 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import com.sshcustom.app.R
+import com.sshcustom.app.service.TunnelMonitorService
 import com.sshcustom.app.ui.screens.AppRoot
 import com.sshcustom.app.ui.theme.SshCustomTheme
 
@@ -34,6 +37,15 @@ class MainActivity : ComponentActivity() {
         // nothing to tear down beyond this style swap.
         setTheme(R.style.Theme_SshCustom)
         enableEdgeToEdge()
+
+        // Start the foreground monitor service so the persistent
+        // notification appears as soon as the user opens the app. The
+        // service detaches its lifecycle from this activity, so it keeps
+        // showing live status even after the user backgrounds the app.
+        ContextCompat.startForegroundService(
+            this,
+            Intent(this, TunnelMonitorService::class.java),
+        )
 
         setContent {
             SshCustomTheme {

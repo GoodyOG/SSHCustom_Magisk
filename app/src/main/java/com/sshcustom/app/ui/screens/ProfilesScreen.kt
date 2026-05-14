@@ -1,5 +1,8 @@
 package com.sshcustom.app.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +24,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -34,6 +38,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -60,10 +65,26 @@ private val MODES = listOf(
 
 @Composable
 fun ProfilesScreen(viewModel: MainViewModel, contentPadding: PaddingValues) {
+    val ctx = LocalContext.current
     val pf by viewModel.profiles.collectAsState()
     val list = pf?.profiles.orEmpty()
     var editing: Profile? by remember { mutableStateOf(null) }
     var creating by remember { mutableStateOf(false) }
+
+    // SAF launchers for import/export. CreateDocument prompts the user to
+    // choose a save location; OpenDocument prompts them to pick a file.
+    // We hand the resulting Uri to the ViewModel which does the read/write
+    // off the main thread.
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri: Uri? ->
+        if (uri != null) viewModel.exportProfiles(ctx, uri)
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri: Uri? ->
+        if (uri != null) viewModel.importProfiles(ctx, uri)
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(contentPadding),
@@ -81,6 +102,18 @@ fun ProfilesScreen(viewModel: MainViewModel, contentPadding: PaddingValues) {
                 ) {
                     Text(stringResource(R.string.profiles_refresh))
                 }
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                FilledTonalButton(
+                    onClick = { exportLauncher.launch("sshcustom-profiles.json") },
+                    modifier = Modifier.weight(1f),
+                ) { Text(stringResource(R.string.profiles_export)) }
+                FilledTonalButton(
+                    onClick = { importLauncher.launch(arrayOf("application/json", "*/*")) },
+                    modifier = Modifier.weight(1f),
+                ) { Text(stringResource(R.string.profiles_import)) }
             }
         }
 
@@ -250,7 +283,9 @@ private fun ProfileEditorDialog(
                         readOnly = true,
                         label = { Text("Mode") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modeMenu) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        modifier = Modifier
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                            .fillMaxWidth(),
                     )
                     androidx.compose.material3.ExposedDropdownMenu(expanded = modeMenu, onDismissRequest = { modeMenu = false }) {
                         MODES.forEach { (id, label) ->

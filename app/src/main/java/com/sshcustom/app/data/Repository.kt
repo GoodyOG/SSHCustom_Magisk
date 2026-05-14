@@ -3,6 +3,7 @@ package com.sshcustom.app.data
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -92,7 +93,7 @@ class Repository(
                 } else {
                     // Try once more after a short delay.
                     scope.launch(Dispatchers.IO) {
-                        kotlinx.coroutines.delay(2000)
+                        delay(2000)
                         if (sse == null && pollJob == null) openSse()
                     }
                 }
@@ -106,7 +107,7 @@ class Repository(
         pollJob = scope.launch(Dispatchers.IO) {
             while (true) {
                 ApiClient.status().onSuccess { _status.value = it }
-                kotlinx.coroutines.delay(3000)
+                delay(3000)
             }
         }
     }

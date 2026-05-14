@@ -43,6 +43,7 @@ import com.sshcustom.app.ui.components.ChipKind
 import com.sshcustom.app.ui.components.InfoCard
 import com.sshcustom.app.ui.components.SectionPill
 import com.sshcustom.app.ui.components.StatusChip
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private enum class LogKind(val key: String, val labelRes: Int) {
@@ -206,7 +207,7 @@ fun RuntimeScreen(viewModel: MainViewModel, contentPadding: PaddingValues) {
                     viewModel.clearLog(selectedLog.key)
                     confirmClear = false
                     scope.launch {
-                        kotlinx.coroutines.delay(400)
+                        delay(400)
                         logText = viewModel.fetchLog(selectedLog.key)
                     }
                 }) { Text("Clear") }

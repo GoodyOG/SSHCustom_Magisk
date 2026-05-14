@@ -23,6 +23,8 @@
     <!-- Profiles -->
     <string name="profiles_new">New Profile</string>
     <string name="profiles_refresh">Refresh</string>
+    <string name="profiles_export">Export</string>
+    <string name="profiles_import">Import</string>
     <string name="profiles_empty_title">No profiles</string>
     <string name="profiles_empty_subtitle">Create a profile to start tunneling.</string>
     <string name="profile_save">Save</string>

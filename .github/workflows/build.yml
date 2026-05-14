@@ -3,18 +3,23 @@ name: Build SSHCustom
 # Triggers:
 #   - Every push to main rebuilds and uploads artifacts (sanity check).
 #   - Every push of a v* tag (e.g. v2.0.0) builds and creates a GitHub
-#     Release with the module ZIP and APK attached.
+#     Release with the module ZIP and signed APK attached.
 #   - Pull requests build but do not release.
 #   - Manual dispatch is enabled for ad-hoc rebuilds from the Actions tab.
 #
-# Two parallel jobs:
+# Three jobs:
 #   - module-and-daemon: builds the Magisk/KernelSU module ZIP via build.sh.
-#   - app: assembles the companion Android app.
+#   - app: assembles the companion Android APK (debug always, release when
+#     the four signing secrets are present).
+#   - release: collects both artifacts on tag pushes and attaches them to
+#     the GitHub Release.
 #
-# A final 'release' job collects both artifacts and attaches them to the
-# GitHub Release on tag pushes. The signing key for release APKs is wired
-# in PR 5 via repository secrets; until then the APK is built unsigned and
-# the workflow's debug variant is the user-facing artifact.
+# Signing keys are read from these repository secrets (set them once):
+#   KEYSTORE_BASE64    — base64 of the .jks keystore
+#   KEYSTORE_PASSWORD  — store password
+#   KEY_ALIAS          — alias inside the keystore
+#   KEY_PASSWORD       — per-key password
+# See scripts/generate-release-keystore.sh.
 on:
   push:
     branches: [main]
@@ -67,27 +72,54 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          # The wrapper jar isn't committed; setup-gradle generates it
-          # on demand from the wrapper properties.
-          gradle-version: wrapper
+          gradle-version: "8.10.2"
+          cache-read-only: false
 
       - name: Read VERSION
         id: ver
         run: echo "version=$(cat VERSION | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
 
-      # Build only the debug variant for now. PR 5 will add release signing
-      # via repository secrets and emit both -debug.apk and -release.apk.
-      - name: Assemble debug APK
-        run: gradle :app:assembleDebug --no-daemon --warning-mode all
+      # Determine if signing secrets are configured. When they aren't (forks,
+      # PRs from outside collaborators), only the debug APK is built.
+      - name: Check signing config
+        id: signing
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "release=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=no" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Upload APK artifact
+      - name: Assemble debug APK
+        run: gradle :app:assembleDebug --no-daemon --warning-mode all --stacktrace
+
+      - name: Assemble release APK
+        if: steps.signing.outputs.release == 'yes'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: gradle :app:assembleRelease --no-daemon --warning-mode all --stacktrace
+
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: SSHCustom-app-v${{ steps.ver.outputs.version }}-debug
           path: app/build/outputs/apk/debug/*.apk
+
+      - name: Upload release APK
+        if: steps.signing.outputs.release == 'yes'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SSHCustom-app-v${{ steps.ver.outputs.version }}-release
+          path: app/build/outputs/apk/release/*.apk
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -109,7 +141,15 @@ jobs:
           name: SSHCustom-Magisk-v${{ steps.ver.outputs.version }}
           path: out/module
 
-      - name: Download APK
+      - name: Download release APK (if produced)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: SSHCustom-app-v${{ steps.ver.outputs.version }}-release
+          path: out/app
+
+      - name: Download debug APK (fallback)
+        if: ${{ hashFiles('out/app/*.apk') == '' }}
         uses: actions/download-artifact@v4
         with:
           name: SSHCustom-app-v${{ steps.ver.outputs.version }}-debug
