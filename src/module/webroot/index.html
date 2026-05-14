@@ -553,6 +553,19 @@
         </div>
         <button class="md3-filled" onclick="saveNetwork()">Apply Network Settings</button>
 
+        <h2 class="section-pill">Boot</h2>
+        <div class="list-container">
+          <div class="list-item">
+            <div class="li-icon">BT</div>
+            <div class="list-item-content" style="flex:1">
+              <div class="toggle-text">Autostart on Boot</div>
+              <span class="supporting-text">Wait for connectivity (cap 30s) then start the daemon automatically. Off by default.</span>
+            </div>
+            <div class="spacer"></div>
+            <button id="autostartSwitch" class="switch" onclick="toggleAutostart()" aria-label="Toggle autostart"></button>
+          </div>
+        </div>
+
         <h2 class="section-pill">About</h2>
         <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px">
           <div class="about-row">
@@ -856,6 +869,24 @@
     }
     $('dnsMode').addEventListener('change', () => $('customDnsRow').hidden = $('dnsMode').value !== 'custom');
     function toggleHotspot() { $('hotspotSwitch').classList.toggle('on'); }
+    async function toggleAutostart() {
+      const sw = $('autostartSwitch');
+      const next = !sw.classList.contains('on');
+      sw.classList.toggle('on', next);
+      try {
+        await postV1('/autostart', { enabled: next }, 6000);
+        toast(next ? 'Autostart enabled' : 'Autostart disabled');
+      } catch (e) {
+        sw.classList.toggle('on', !next);
+        toast('Autostart toggle failed: ' + e.message, 'error');
+      }
+    }
+    async function loadAutostart() {
+      try {
+        const r = await v1('/autostart');
+        $('autostartSwitch').classList.toggle('on', !!r.enabled);
+      } catch (_) {}
+    }
     async function saveNetwork() {
       try {
         const mode = $('dnsMode').value;
@@ -1061,7 +1092,54 @@
     loadPublicIP(false);
     loadDiagnostics();
     loadLog();
-    setInterval(loadStatus, 3000);
+    loadAutostart();
+
+    // Try Server-Sent Events first; fall back to polling if it errors twice in
+    // a row (e.g. behind a buggy proxy or if the daemon is too old). The SSE
+    // stream pushes a fresh status payload on every state.set in the daemon,
+    // so the dashboard reacts instantly to reconnects, route flips, etc.
+    let sseFailures = 0;
+    let sseSource = null;
+    let pollTimer = null;
+    function startPolling() {
+      if (pollTimer) return;
+      pollTimer = setInterval(loadStatus, 3000);
+    }
+    function stopPolling() {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
+    function startEvents() {
+      try {
+        sseSource = new EventSource(API + '/events');
+      } catch (e) {
+        startPolling();
+        return;
+      }
+      sseSource.addEventListener('status', (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          statusData = data.runtime;
+          configData = data.config;
+          pathsData = data.paths || {};
+          renderStatus(data);
+          renderPaths();
+          renderAbout();
+          sseFailures = 0;
+          stopPolling();
+        } catch (_) {}
+      });
+      sseSource.onerror = () => {
+        sseFailures += 1;
+        if (sseFailures >= 2) {
+          try { sseSource.close(); } catch (_) {}
+          sseSource = null;
+          startPolling();
+        }
+      };
+    }
+    startEvents();
+    // Diagnostics + public IP are not on the SSE channel — they are pulled on
+    // their own slower cadence to avoid excess work for screens nobody is on.
     setInterval(loadDiagnostics, 8000);
     setInterval(() => loadPublicIP(false), 60000);
   </script>

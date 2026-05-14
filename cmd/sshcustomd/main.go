@@ -214,9 +214,54 @@ type State struct {
 	PoolMaxStreams      int       `json:"pool_max_streams"`
 	PoolLastError       string    `json:"pool_last_error"`
 	Note                string    `json:"note"`
+
+	// SSE broadcast plumbing. Subscribers are kept on a slice guarded by
+	// subsMu; broadcast() notifies all of them with a non-blocking send so a
+	// slow client never stalls a state mutation.
+	subsMu sync.Mutex
+	subs   []chan struct{}
 }
 
-func (s *State) set(fn func()) { s.mu.Lock(); defer s.mu.Unlock(); fn() }
+func (s *State) set(fn func()) {
+	s.mu.Lock()
+	fn()
+	s.mu.Unlock()
+	s.broadcast()
+}
+
+// Subscribe registers a listener that is notified whenever state changes. The
+// returned channel buffers a single pending notification. Callers must invoke
+// the returned cleanup func when done. Notifications coalesce: missing one is
+// always safe because consumers re-read the full snapshot anyway.
+func (s *State) Subscribe() (<-chan struct{}, func()) {
+	ch := make(chan struct{}, 1)
+	s.subsMu.Lock()
+	s.subs = append(s.subs, ch)
+	s.subsMu.Unlock()
+	cleanup := func() {
+		s.subsMu.Lock()
+		defer s.subsMu.Unlock()
+		for i, c := range s.subs {
+			if c == ch {
+				s.subs = append(s.subs[:i], s.subs[i+1:]...)
+				break
+			}
+		}
+	}
+	return ch, cleanup
+}
+
+func (s *State) broadcast() {
+	s.subsMu.Lock()
+	defer s.subsMu.Unlock()
+	for _, ch := range s.subs {
+		select {
+		case ch <- struct{}{}:
+		default:
+			// Subscriber already has a pending notification; coalesce.
+		}
+	}
+}
 
 func (s *State) Snapshot() map[string]any {
 	s.mu.RLock()
@@ -755,6 +800,121 @@ func run(args []string) {
 	mux.HandleFunc("/api/v1/logs/core/clear", func(w http.ResponseWriter, r *http.Request) { clearLog(w, r, "core.log") })
 	mux.HandleFunc("/api/v1/logs/control/clear", func(w http.ResponseWriter, r *http.Request) { clearLog(w, r, "control.log") })
 	mux.HandleFunc("/api/v1/logs/action/clear", func(w http.ResponseWriter, r *http.Request) { clearLog(w, r, "action.log") })
+	// Server-Sent Events stream of state changes. The client opens a long
+	// connection; we send the current snapshot immediately, then push a fresh
+	// snapshot every time State.broadcast() fires (i.e. on every state.set).
+	// A 25 s heartbeat keeps idle proxies/Android battery savers from killing
+	// the connection. Falls back gracefully — clients that can't keep an
+	// EventSource open (e.g. behind a buggy proxy) just keep polling /status.
+	mux.HandleFunc("/api/v1/events", func(w http.ResponseWriter, r *http.Request) {
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			writeV1Error(w, http.StatusInternalServerError, errors.New("streaming unsupported"))
+			return
+		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache, no-transform")
+		w.Header().Set("Connection", "keep-alive")
+		w.Header().Set("X-Accel-Buffering", "no") // disable nginx-style buffering
+		w.WriteHeader(http.StatusOK)
+
+		send := func(event string, payload any) bool {
+			data, err := json.Marshal(payload)
+			if err != nil {
+				return false
+			}
+			if event != "" {
+				if _, err := fmt.Fprintf(w, "event: %s\n", event); err != nil {
+					return false
+				}
+			}
+			if _, err := fmt.Fprintf(w, "data: %s\n\n", data); err != nil {
+				return false
+			}
+			flusher.Flush()
+			return true
+		}
+
+		statusPayload := func() map[string]any {
+			current := getConfig()
+			return map[string]any{
+				"runtime":      state.Snapshot(),
+				"config":       configSummary(current),
+				"capabilities": apiCapabilities(current),
+				"paths": map[string]string{
+					"work_dir":      *workDir,
+					"config_path":   *cfgPath,
+					"profiles_path": *profPath,
+					"run_dir":       runDir,
+					"webroot":       filepath.Join(*workDir, "webroot"),
+				},
+			}
+		}
+
+		// Initial snapshot so the dashboard renders without waiting for the
+		// next mutation.
+		if !send("status", statusPayload()) {
+			return
+		}
+
+		ch, cleanup := state.Subscribe()
+		defer cleanup()
+
+		heartbeat := time.NewTicker(25 * time.Second)
+		defer heartbeat.Stop()
+
+		ctx := r.Context()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ch:
+				if !send("status", statusPayload()) {
+					return
+				}
+			case <-heartbeat.C:
+				// Comment line keeps the connection warm without
+				// triggering an EventSource onmessage handler.
+				if _, err := w.Write([]byte(": ping\n\n")); err != nil {
+					return
+				}
+				flusher.Flush()
+			}
+		}
+	})
+	// Autostart marker. service.sh reads /data/adb/sshcustom/run/autostart at
+	// boot; the daemon owns the toggle so the WebUI Settings tab can flip it
+	// without users editing files. Body: {"enabled": true|false}.
+	mux.HandleFunc("/api/v1/autostart", func(w http.ResponseWriter, r *http.Request) {
+		marker := filepath.Join(runDir, "autostart")
+		switch r.Method {
+		case http.MethodGet:
+			_, err := os.Stat(marker)
+			writeV1OK(w, map[string]any{"enabled": err == nil})
+		case http.MethodPost, http.MethodPut:
+			var req struct {
+				Enabled bool `json:"enabled"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeV1Error(w, http.StatusBadRequest, err)
+				return
+			}
+			if req.Enabled {
+				if err := os.WriteFile(marker, []byte("1\n"), 0644); err != nil {
+					writeV1Error(w, http.StatusInternalServerError, err)
+					return
+				}
+			} else {
+				if err := os.Remove(marker); err != nil && !os.IsNotExist(err) {
+					writeV1Error(w, http.StatusInternalServerError, err)
+					return
+				}
+			}
+			writeV1OK(w, map[string]any{"enabled": req.Enabled})
+		default:
+			writeV1Error(w, http.StatusMethodNotAllowed, errors.New("GET, POST, or PUT required"))
+		}
+	})
 	// Dashboard. webui.Handler prefers <work_dir>/webroot/index.html when
 	// present and falls back to the embedded HTML otherwise. This means a
 	// fresh install always has a working UI even if the file copy step
