@@ -3,9 +3,18 @@ name: Build SSHCustom
 # Triggers:
 #   - Every push to main rebuilds and uploads artifacts (sanity check).
 #   - Every push of a v* tag (e.g. v2.0.0) builds and creates a GitHub
-#     Release with the module ZIP attached. This is the user-facing release.
+#     Release with the module ZIP and APK attached.
 #   - Pull requests build but do not release.
 #   - Manual dispatch is enabled for ad-hoc rebuilds from the Actions tab.
+#
+# Two parallel jobs:
+#   - module-and-daemon: builds the Magisk/KernelSU module ZIP via build.sh.
+#   - app: assembles the companion Android app.
+#
+# A final 'release' job collects both artifacts and attaches them to the
+# GitHub Release on tag pushes. The signing key for release APKs is wired
+# in PR 5 via repository secrets; until then the APK is built unsigned and
+# the workflow's debug variant is the user-facing artifact.
 on:
   push:
     branches: [main]
@@ -14,10 +23,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  module-and-daemon:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -28,9 +37,6 @@ jobs:
           go-version: "1.23.2"
           cache: true
 
-      # Read the canonical version once and expose it to every later step.
-      # The VERSION file is the single source of truth that flows into the
-      # daemon binary, module.prop, and these artifact names.
       - name: Read VERSION
         id: ver
         run: echo "version=$(cat VERSION | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
@@ -38,7 +44,7 @@ jobs:
       - name: Build flashable module
         run: ./build.sh
 
-      - name: Upload build artifacts
+      - name: Upload module artifacts
         uses: actions/upload-artifact@v4
         with:
           name: SSHCustom-Magisk-v${{ steps.ver.outputs.version }}
@@ -47,9 +53,72 @@ jobs:
             src/module/bin/arm64/sshcustomd
             src/module/bin/arm/sshcustomd
 
+  app:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          # The wrapper jar isn't committed; setup-gradle generates it
+          # on demand from the wrapper properties.
+          gradle-version: wrapper
+
+      - name: Read VERSION
+        id: ver
+        run: echo "version=$(cat VERSION | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+
+      # Build only the debug variant for now. PR 5 will add release signing
+      # via repository secrets and emit both -debug.apk and -release.apk.
+      - name: Assemble debug APK
+        run: gradle :app:assembleDebug --no-daemon --warning-mode all
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SSHCustom-app-v${{ steps.ver.outputs.version }}-debug
+          path: app/build/outputs/apk/debug/*.apk
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [module-and-daemon, app]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Read VERSION
+        id: ver
+        run: echo "version=$(cat VERSION | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Download module ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: SSHCustom-Magisk-v${{ steps.ver.outputs.version }}
+          path: out/module
+
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: SSHCustom-app-v${{ steps.ver.outputs.version }}-debug
+          path: out/app
+
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/SSHCustom-Magisk-v${{ steps.ver.outputs.version }}.zip
+          files: |
+            out/module/dist/SSHCustom-Magisk-v${{ steps.ver.outputs.version }}.zip
+            out/app/*.apk
           generate_release_notes: true

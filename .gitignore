@@ -1,13 +1,46 @@
+# Build outputs
 dist/*
 !dist/.gitkeep
 
-*.log
-*.tmp
+# Go
+*.test
+*.prof
+sshcustomd-host
+
+# Android / Gradle
+.gradle/
+build/
+local.properties
+captures/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.jks
+*.keystore
+release/
+**/release/
+app/release/
+app/build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python (for scripts/)
+__pycache__/
+*.pyc
+.venv/
+
+# Backups
 *.bak
-
-/sshcustomd
-/sshcustomd-host
-/dist/sshcustomd-host
-
-node_modules/
-src/module/webroot/assets/*.map
+*.tmp

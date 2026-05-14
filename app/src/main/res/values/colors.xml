@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bare minimum static colors. Material 3 dynamic colors are applied by
+     Compose at runtime; everything else (state chips, button tints, etc.)
+     is derived from MaterialTheme.colorScheme inside Compose. -->
+<resources>
+    <color name="splash_background">#FF111318</color>
+    <color name="ic_launcher_background">#FF1B2233</color>
+</resources>
