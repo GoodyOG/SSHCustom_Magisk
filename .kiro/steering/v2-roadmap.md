@@ -55,11 +55,15 @@ or status change.
       Kotlin 2.0 + Compose. Four tabs (Home/Profiles/Runtime/Settings) wired to
       `/api/v1/*` with SSE + polling fallback. libsu for root daemon control.
       WebView log viewer. CI builds APK alongside module ZIP.
-- [ ] **PR 5** in progress: App polish — Quick Settings Tile, foreground
-      notification driven by SSE, theme bridge (system Material You → CSS vars
-      in WebView), signed release APK via repository secrets in CI.
-- [ ] **PR 6**: README rewrite, LICENSE files (Apache-2.0 + GPL-3.0), logo asset,
-      v2.0.0 git tag + GitHub Release with module ZIP and signed APK
+- [x] **PR 5** merged: App polish — Quick Settings Tile, foreground
+      notification driven by SSE, profile import/export via SAF, signed
+      release APK via repository secrets in CI. Keystore generated and
+      uploaded as 4 Actions secrets (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`,
+      `KEY_ALIAS`, `KEY_PASSWORD`) plus a private gist backup.
+- [ ] **PR 6** in progress: README rewrite, LICENSE files (Apache-2.0 +
+      GPL-3.0), NOTICE, CHANGELOG, abstract logo asset (vector launcher
+      + monochrome themed-icon variant + WebUI favicon), v2.0.0 git tag +
+      GitHub Release with module ZIP and signed APK
 
 ## File layout reference
 

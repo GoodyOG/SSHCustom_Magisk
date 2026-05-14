@@ -1,198 +1,262 @@
 # SSHCustom-Magisk
 
-SSHCustom-Magisk is a Magisk and KernelSU module for routing Android TCP traffic through an SSH tunnel with root-level transparent proxying. It is built around a compact Go daemon, module control scripts, and a local WebUI for profile management, runtime visibility, and network controls.
+Magisk / KernelSU module that turns a rooted Android phone into an SSH-tunnel
+router. Bundles a self-contained Go daemon, a local WebUI, a native Android
+companion app, and the iptables glue that makes it all transparent.
 
-The project is being rebuilt toward a production-grade module: clean source layout, repeatable builds, high-throughput SSH transport, a Specter-style Material WebUI, and a stable root-control path for a future companion app. Runtime folders intentionally stay lowercase `sshcustom`.
+[![Build SSHCustom](https://github.com/GoodyOG/SSHCustom_Magisk/actions/workflows/build.yml/badge.svg)](https://github.com/GoodyOG/SSHCustom_Magisk/actions/workflows/build.yml)
+[![License: Apache-2.0 (module + daemon)](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![License: GPL-3.0 (companion app)](https://img.shields.io/badge/app%20license-GPL--3.0-orange.svg)](app/LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/GoodyOG/SSHCustom_Magisk?display_name=tag&sort=semver)](https://github.com/GoodyOG/SSHCustom_Magisk/releases/latest)
 
-## Core Goals
+## What this gives you
 
-- High-throughput SSH tunneling with payload, HTTP proxy, TLS/SNI, and direct transport modes.
-- IPv4-only transparent TCP proxying for now, using iptables REDIRECT.
-- Hotspot TCP sharing enabled by default, with WebUI controls.
-- Device DNS as the default resolver, with optional Google DNS and Cloudflare DNS profiles.
-- Maximum compatibility for SSH host keys, TLS/SNI, payload-based networks, and legacy profile behavior.
-- Local API and WebUI available while the module runtime is enabled.
-- Magisk and KernelSU support.
-- A clean repository containing source, module files, and release binaries only where they are intentionally shipped.
+- **A SOCKS5 proxy** at `127.0.0.1:1080` and a **transparent TCP listener**
+  at `0.0.0.0:10810` that funnel app traffic through your SSH server.
+- **iptables rules** that redirect outgoing TCP from the device (and
+  optionally from tethered hotspot clients) into the transparent listener,
+  so apps don't need to know anything about a proxy.
+- **Pluggable carriers** — direct, HTTP-CONNECT proxy, TLS/SNI, payload
+  injection, or any combination — for SSH endpoints behind aggressive ISPs.
+- **A local dashboard** at `http://127.0.0.1:9190/` for profile management,
+  network controls, and live diagnostics.
+- **A native Android companion app** with Material You theming, a Quick
+  Settings Tile, persistent notification, and on-boot autostart.
 
-## Module Layout
+It runs on rooted Android (Magisk **or** KernelSU) on `arm64-v8a` and
+`armeabi-v7a` devices.
 
-```text
-cmd/sshcustomd/        Go daemon source
-src/module/            Magisk/KernelSU module template
-src/module/bin/        Shipped ARM binaries
-src/module/config/     Default config and sample profiles
-src/module/scripts/    Runtime control and cleanup scripts
-src/module/webroot/    Built local WebUI
-docs/                  Screenshots and technical notes
-dist/                  Generated build output
-```
-
-`dist/` is generated output. It should not be treated as source.
-
-## Runtime Flow
-
-1. Magisk or KernelSU installs the module files.
-2. `customize.sh` prepares `/data/adb/sshcustom`, copies the daemon, scripts, config, profiles, and WebUI.
-3. The module action script starts or stops the runtime.
-4. `sshcustom.sh` validates config, starts `sshcustomd`, applies cleanup when stopping, and maintains module state.
-5. `sshcustomd` authenticates SSH, maintains an adaptive SSH connection pool, starts SOCKS5, starts transparent TCP proxying, and exposes the local API/WebUI.
-6. iptables redirects local Android TCP traffic into the daemon, while SSH endpoint traffic and internal module ports are bypassed to avoid loops.
-7. Hotspot TCP forwarding is enabled when configured, allowing tethered clients to share the tunnel path.
-
-## WebUI Direction
-
-The WebUI is being rebuilt as a Specter-style Material interface:
-
-- Home dashboard with tunnel state, selected profile, throughput/runtime metrics, and public IP details.
-- Public IP panel showing IP address, location, ISP, and ASN.
-- Profile manager for SSH, payload, HTTP proxy, TLS/SNI, fallback IPs, and quick probe results.
-- Network page for transparent proxy, SOCKS5, hotspot sharing, and DNS mode.
-- Runtime page for core logs, control logs, connection pool state, route changes, reconnect events, memory, CPU, goroutines, and recent errors.
-- Settings page for theme, compatibility flags, update details, and future root app integration.
-
-The shipped dashboard lives in `src/module/webroot` and now follows the Specter-style layout: top app bar, Material-style cards, list containers, tonal controls, switches, chips, and bottom floating pill navigation.
-
-## DNS Policy
-
-Default DNS mode is `device`.
-
-Planned selectable modes:
-
-- `device`: use the Android/device resolver path.
-- `google`: use Google DNS resolvers.
-- `cloudflare`: use Cloudflare DNS resolvers.
-- `custom`: optional future mode for user-provided resolver IPs.
-
-DNS hijacking and UDP proxying are intentionally out of scope for the current IPv4 TCP rebuild. The first production target is reliable SSH endpoint resolution and clear WebUI control over resolver choice.
-
-The current DNS setting affects SSHCustom endpoint resolution first: SSH host, HTTP proxy host, transport probes, and module network checks. Android app DNS and hotspot client DNS remain device-controlled for this rebuild.
-
-## Throughput Policy
-
-The daemon is optimized for speed and compatibility:
-
-- Static Go binaries for Android ARM64 and ARMv7.
-- SSH connection pooling to reduce per-stream setup cost.
-- Large copy buffers for high-throughput streams.
-- Patched SSH channel behavior for Dropbear compatibility and larger receive tolerance.
-- Circuit-breaker reconnect behavior to avoid endless tight retry loops.
-- Tunable pool size, stream idle timeout, acquire timeout, connect timeout, and keepalive interval.
-
-The rebuild should prioritize measurable throughput and stability over adding broad proxy modes too early.
-
-## API Policy
-
-The local API is intended to be available only while the module runtime is enabled. It currently binds to:
+## Repository layout
 
 ```text
-http://127.0.0.1:9190/
+cmd/sshcustomd/                 Go daemon entry point
+internal/                       Daemon packages (config, state, api,
+                                sshpool, transport, proxy, iptables,
+                                dns, metrics, version, webui)
+internal/apiv1/contracts.go     Stable JSON envelope contracts
+third_party/golang.org/x/crypto Vendored x/crypto fork (see PATCHES.md)
+src/module/                     Magisk/KernelSU module template
+  ├─ module.prop, customize.sh, service.sh, action.sh, uninstall.sh
+  ├─ META-INF/com/google/android/{update-binary,updater-script}
+  ├─ bin/{arm,arm64}/sshcustomd     Prebuilt static binaries
+  ├─ config/{config.json, profiles.json}
+  ├─ scripts/{sshcustom.sh, sshcustom_watchdog.sh, net_clean.sh}
+  └─ webroot/{index.html, favicon.svg}
+app/                            Native Android companion (Compose + libsu)
+docs/openapi.yaml               Daemon API specification
+scripts/package_module.py       Reproducible ZIP packager
+build.sh                        Cross-compile + validate + package
+.github/workflows/build.yml     CI (module ZIP + signed APK + release)
+VERSION                         Single source of truth for the version
 ```
 
-The API is open by design for the current module workflow. Future work should keep endpoints stable enough for a root companion app to control the module through root-side scripts and runtime state files.
+## Quick install
 
-Stable API work starts under `/api/v1`. Legacy `/api/*` routes remain available for the current WebUI while the Specter-style UI is rebuilt.
+1. Download the latest release from
+   [Releases](https://github.com/GoodyOG/SSHCustom_Magisk/releases/latest).
+   Two artifacts: `SSHCustom-Magisk-vX.Y.Z.zip` (the module flashable) and
+   `app-release.apk` (the companion app).
+2. Flash the ZIP through the **Magisk** or **KernelSU** app, reboot.
+3. Open the module in Magisk/KernelSU and tap the **action button** to
+   start the tunnel. State chips (○ stopped, 🟡 starting, ● running)
+   update live in the module description.
+4. Install the companion APK if you want a native UI; otherwise visit
+   `http://127.0.0.1:9190/` in any browser on the phone.
+5. Edit or import a profile, then **Save, Use & Restart** to bring up the
+   tunnel. Apps' TCP traffic now exits via your SSH server.
 
-Initial v1 routes:
+## How it fits together
 
 ```text
-GET        /api/v1/health
-GET        /api/v1/status
-GET        /api/v1/diagnostics
-GET        /api/v1/network/public-ip
-GET        /api/v1/config
-POST/PATCH /api/v1/config
-GET        /api/v1/profiles
-GET        /api/v1/profile/current
-POST       /api/v1/profile/select
-POST       /api/v1/profile/save
-POST       /api/v1/control
-GET        /api/v1/logs/core
-GET        /api/v1/logs/control
+   ┌─────────┐                  ┌──────────────────┐
+   │ Apps    │  TCP             │ /api/v1/* + SSE  │
+   │         │ ──┐              │ /favicon.svg     │
+   └─────────┘   │ iptables     │ /                │ ◄── browser / app
+                 │ REDIRECT     └──────────┬───────┘
+                 ▼                          │
+   ┌──────────────────────────┐             │
+   │ Transparent listener     │             │
+   │ 0.0.0.0:10810            │             │
+   │   SO_ORIGINAL_DST=80     │             │
+   │   pool.Dial(target)      │             │
+   └────────────┬─────────────┘             │
+                │                            │
+                ▼                            ▼
+   ┌──────────────────────────────────────────────┐
+   │ SSH connection pool (sshcustomd)             │
+   │  ▸ pluggable carrier chain:                  │
+   │      tcp → [http_proxy] → [tls] → [payload]  │
+   │  ▸ Android-aware DNS (see internal/dnsx)     │
+   │  ▸ circuit breaker, route-debounced reconnect│
+   └──────────────────────────────────────────────┘
+                │
+                ▼
+            SSH server  ─►  internet
 ```
 
-`/api/v1/network/public-ip` returns both direct device-route public IP details and tunnel-route public IP details when SOCKS/SSH is available.
+The Go daemon handles SOCKS5, transparent TCP, the connection pool, the
+HTTP API, and the SSE event stream. iptables glue lives in
+`internal/iptables` and is invoked at start time and torn down at stop
+time. Tethered hotspot clients are routed through the same chain via a
+`PREROUTING` hook, so a laptop tethered to the phone shares the SSH exit
+IP without extra config.
 
-## Compatibility Policy
+For a much deeper code tour, see [`docs/PHASE2_TRANSPORT_PROBE.md`](docs/PHASE2_TRANSPORT_PROBE.md).
 
-The module favors compatibility:
+## Companion app
 
-- SSH host key verification remains permissive by default.
-- TLS verification remains permissive by default for payload/SNI carrier workflows.
-- IPv4 remains the production target for the current rebuild.
-- Magisk and KernelSU are first-class targets.
+The native Android app is GPL-3.0 (because it inherits patterns from
+KernelSU-Next). It does not run the tunnel itself — it talks to the
+daemon's `/api/v1/*` surface and uses libsu to invoke the module's
+control scripts when the daemon is offline.
 
-Security-sensitive defaults should be clearly labeled in the WebUI instead of silently changed.
+Highlights:
 
-## Build
+- **Material You dynamic colours** on Android 12+, fixed palette below.
+- **Foreground service** that consumes the daemon's SSE event stream and
+  keeps a persistent notification accurate.
+- **Quick Settings Tile** for one-tap toggle from the system shade.
+- **Boot receiver** that auto-launches the foreground service on boot
+  when autostart is enabled.
+- **Profile import/export** via the Storage Access Framework.
 
-Go is required for daemon builds. The installed toolchain should be recent enough to build the module targets.
+App-specific build notes are in [`app/README.md`](app/README.md).
+
+## API
+
+The daemon exposes a small REST + SSE surface bound to loopback at
+`127.0.0.1:9190`. Full schema in
+[`docs/openapi.yaml`](docs/openapi.yaml). Highlights:
+
+| Method | Path                              | Purpose                              |
+|--------|-----------------------------------|--------------------------------------|
+| GET    | `/api/v1/health`                  | Liveness probe                       |
+| GET    | `/api/v1/status`                  | Runtime + config + paths snapshot    |
+| GET    | `/api/v1/events`                  | SSE stream of status updates         |
+| GET    | `/api/v1/diagnostics`             | Pool stats, last events, route info  |
+| GET    | `/api/v1/network/public-ip`       | Tunnel public-IP geo lookup          |
+| GET    | `/api/v1/profiles`                | List profiles                        |
+| POST   | `/api/v1/profile/save`            | Create/update a profile              |
+| POST   | `/api/v1/profile/select`          | Switch the active profile            |
+| GET    | `/api/v1/config`                  | Read runtime config                  |
+| POST   | `/api/v1/config`                  | Patch runtime config (JSON merge)    |
+| POST   | `/api/v1/control`                 | `start` / `stop` / `restart` / `clean` |
+| GET    | `/api/v1/autostart`               | Read autostart flag                  |
+| POST   | `/api/v1/autostart`               | Set autostart flag                   |
+| GET    | `/api/v1/logs/{kind}`             | Tail core / control / action log     |
+| POST   | `/api/v1/logs/{kind}/clear`       | Truncate log + write audit line      |
+
+All JSON responses are wrapped in a stable envelope:
+
+```json
+{ "api_version": "v1", "ok": true, "data": { ... } }
+```
+
+The API has no authentication. It binds to loopback by design — the
+threat model assumes a single user on a personal rooted device. If you
+need it externally, run a TLS proxy in front of it and add auth there.
+
+## Build from source
+
+You need Go 1.23+, Python 3, and (for the app) Java 17 and Android SDK 35.
+
+### Module + daemon
 
 ```bash
 ./build.sh
 ```
 
-The build should:
+This validates the bundled `config.json` / `profiles.json`, cross-compiles
+the daemon for `linux/arm64` and `linux/arm` (CGO disabled, statically
+linked), copies the binaries into `src/module/bin/`, and packages a
+deterministic ZIP into `dist/`.
 
-1. Validate bundled config and profiles.
-2. Cross-compile `sshcustomd` for Linux ARM64 and ARMv7.
-3. Copy release binaries into `src/module/bin`.
-4. Build the WebUI into `src/module/webroot`.
-5. Package the module zip into `dist/` with Unix permission bits preserved.
+### Companion app
 
-Windows host builds are not the runtime target. Android/Linux ARM builds are the important release outputs.
-
-## Install
-
-1. Build or download a release zip.
-2. Install the zip through Magisk or KernelSU.
-3. Start the module with the module action button.
-4. Open the local dashboard:
-
-```text
-http://127.0.0.1:9190/
+```bash
+./gradlew :app:assembleDebug
 ```
 
-5. Edit or import an SSH profile, probe the connection, and start the tunnel.
+`app/build/outputs/apk/debug/app-debug.apk` is the result. To produce a
+signed release APK locally, see the signing notes in `app/README.md`.
 
-## Runtime Paths
+### Reproducible builds
 
-```text
-/data/adb/sshcustom/                  Runtime work directory
-/data/adb/sshcustom/sshcustomd        Daemon binary
-/data/adb/sshcustom/config.json       Runtime config
-/data/adb/sshcustom/profiles.json     User profiles
-/data/adb/sshcustom/run/              Logs and state
-/data/adb/sshcustom/webroot/          Local WebUI
-```
+- The module ZIP is byte-reproducible across machines: the packager
+  (`scripts/package_module.py`) forces a fixed file timestamp and
+  deterministic POSIX perms.
+- The daemon binary is built with `-trimpath -buildvcs=false
+  -ldflags="-s -w -buildid="`; CGO is off.
 
-## Logs
+## Versioning
 
-Important runtime logs:
+Single source of truth in [`VERSION`](VERSION). On bump, the build script
+flows the value into `module.prop`, the daemon's `version.Version`, the
+CI artifact names, and the app's `versionName` / `versionCode`. Just edit
+`VERSION` and re-run `./build.sh` (or push to `main` and let CI handle it).
 
-```text
-/data/adb/sshcustom/run/core.log
-/data/adb/sshcustom/run/control.log
-/data/adb/sshcustom/run/action.log
-/data/adb/sshcustom/run/watchdog.log
-/data/adb/sshcustom/run/net_clean.log
-```
+## Releases
 
-The rebuilt WebUI should expose useful runtime details without requiring users to inspect files manually.
+Pushing a `v*` tag (e.g. `v2.0.0`) on `main` triggers a CI release that
+attaches both the module ZIP and the signed APK to the GitHub Release.
+See [`CHANGELOG.md`](CHANGELOG.md) for what changed.
 
-## Production Rebuild Roadmap
+## Compatibility & defaults
 
-1. Clean repository layout, generated files, dependency layout, and build artifacts.
-2. Split the daemon into focused packages for config, API, SSH transport, proxy listeners, iptables, metrics, and runtime state.
-3. Stabilize API contracts for the WebUI and future root app.
-4. Add DNS mode selection while keeping device DNS as default.
-5. Add public IP details to the Home page.
-6. Replace the current single-file dashboard with a Specter-style Material WebUI source build.
-7. Improve runtime diagnostics and core log visibility.
-8. Tune throughput with benchmarks and device-side observations.
-9. Harden package scripts for Magisk and KernelSU installs.
-10. Ship release candidates with repeatable build output and clear changelogs.
+- **IPv4 only.** IPv6 is intentionally out of scope. If your network gives
+  you IPv6 routes, apps may bypass the tunnel — disable IPv6 on the
+  device or rely on the SSH server being IPv4-reachable.
+- **Permissive SSH host keys and TLS verification** by default. This
+  matches HTTP Injector / HTTP Custom behaviour and is what most
+  payload-based ISP-bypass workflows expect. The companion app surfaces
+  these as advanced toggles.
+- **DNS modes:** `device` (the Android resolver path), `google`,
+  `cloudflare`, or `custom`. UDP DNS hijacking is **not** supported on
+  this rebuild.
+- **Hotspot tethering** is on by default; tethered clients share the
+  tunnel exit IP via a `PREROUTING` hook on `wlan+`, `rndis+`, `ncm+`,
+  `bt-pan+`, etc.
 
-## Status
+## Licensing
 
-This repository is in active rebuild planning. The current daemon already provides the core tunnel path, but the codebase still needs cleanup, WebUI replacement, API polish, and production packaging work before it should be treated as deployment-grade.
+- The module + Go daemon are licensed under the [Apache License
+  2.0](LICENSE).
+- The companion Android app is licensed under
+  [GPL-3.0](app/LICENSE) because it incorporates patterns from
+  KernelSU-Next.
+- Third-party attributions are in [`NOTICE`](NOTICE).
+
+## Contributing
+
+Pull requests are welcome. Two ground rules:
+
+1. Keep the `/api/v1/*` envelope shape stable — adding fields is fine,
+   renaming or removing them is not.
+2. Don't commit the gradle wrapper jar. Android Studio fetches it on
+   import.
+
+If you're touching the daemon, run `go test ./...` and `./build.sh`
+before opening a PR. If you're touching the app, run `./gradlew
+:app:assembleDebug`.
+
+## Security
+
+The dashboard binds to loopback and there's no authentication. Anyone
+local to the phone with the right port can read profiles or change DNS.
+On a personal device, that's fine. Don't expose port 9190 to your LAN
+without putting a TLS-and-auth proxy in front.
+
+SSH passwords are stored in plain text in `/data/adb/sshcustom/profiles.json`
+(mode `0600`). On a rooted device anything else with root can read them
+— acknowledged, not encrypted. If that's a concern for your threat model
+you should use SSH keys (and the daemon supports them through the same
+profile shape).
+
+## Credits
+
+- **GoodyOG** — author and maintainer.
+- **KernelSU-Next** team — Compose UI patterns and libsu wiring approach.
+- **The Go x/crypto authors** — vendored and lightly patched for Dropbear
+  compatibility (see [`third_party/PATCHES.md`](third_party/PATCHES.md)).
+
+Have fun.

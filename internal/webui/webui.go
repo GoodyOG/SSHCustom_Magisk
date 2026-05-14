@@ -28,6 +28,11 @@ import (
 //go:embed index.html
 var indexHTML []byte
 
+// faviconSVG is the dashboard tab icon, served at /favicon.svg.
+//
+//go:embed favicon.svg
+var faviconSVG []byte
+
 // Handler returns an http.Handler that serves the dashboard. It prefers the
 // on-disk file at workDir/webroot/index.html and falls back to the embedded
 // copy. Errors reading the disk file (permission denied, missing) silently
@@ -35,7 +40,19 @@ var indexHTML []byte
 // render so the user can at least see the daemon is alive.
 func Handler(workDir string) http.Handler {
 	diskPath := filepath.Join(workDir, "webroot", "index.html")
+	faviconPath := filepath.Join(workDir, "webroot", "favicon.svg")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Favicon: same disk-first / embedded-fallback strategy.
+		if r.URL.Path == "/favicon.svg" || r.URL.Path == "/favicon.ico" {
+			w.Header().Set("Content-Type", "image/svg+xml")
+			w.Header().Set("Cache-Control", "public, max-age=86400")
+			if b, err := os.ReadFile(faviconPath); err == nil && len(b) > 0 {
+				_, _ = w.Write(b)
+				return
+			}
+			_, _ = w.Write(faviconSVG)
+			return
+		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		// Disk override wins. Treat empty-file as "use embedded" because a
 		// truncated webroot/index.html during install would otherwise serve

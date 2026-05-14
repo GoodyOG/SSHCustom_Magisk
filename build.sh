@@ -34,6 +34,8 @@ HOST_BIN="$DIST/sshcustomd-host"
 ZIP_OUT="$DIST/SSHCustom-Magisk-v${VERSION}.zip"
 WEBROOT_SRC="$MODULE/webroot/index.html"
 WEBROOT_EMBED="$ROOT/internal/webui/index.html"
+FAVICON_SRC="$MODULE/webroot/favicon.svg"
+FAVICON_EMBED="$ROOT/internal/webui/favicon.svg"
 LDFLAGS="-s -w -buildid= -X github.com/GoodyOG/SSHCustom_Magisk/internal/version.Version=${VERSION}"
 
 mkdir -p "$DIST" "$(dirname "$ARM64_BIN")" "$(dirname "$ARMV7_BIN")"
@@ -49,6 +51,7 @@ echo "==> Syncing embedded webroot from $WEBROOT_SRC"
 # bytes. Differences would mean the dashboard looks one way during install
 # and another way after a fresh install with no on-disk webroot.
 cp "$WEBROOT_SRC" "$WEBROOT_EMBED"
+cp "$FAVICON_SRC" "$FAVICON_EMBED"
 
 echo "==> Stamping src/module/module.prop with version=${VERSION}"
 # The module.prop file is what Magisk and KernelSU display in their module
