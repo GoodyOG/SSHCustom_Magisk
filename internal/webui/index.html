@@ -309,15 +309,7 @@
       border-top: 1px solid var(--surface-highest);
       padding: 0;
     }
-    .nav-bar::after {
-      content: "";
-      position: absolute;
-      bottom: -50px;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background: var(--surface-high);
-    }
+
     .nav-tab {
       flex: 1;
       display: flex;
@@ -381,6 +373,7 @@
       bottom: 84px;
       left: 50%;
       transform: translateX(-50%) translateY(120px);
+      visibility: hidden;
       min-height: 52px;
       min-width: 288px;
       max-width: calc(100vw - 24px);
@@ -393,7 +386,7 @@
       font-weight: 700;
       transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1);
     }
-    .toast.open { transform: translateX(-50%) translateY(0); }
+    .toast.open { transform: translateX(-50%) translateY(0); visibility: visible; }
     .toast.error { background: var(--error-container); color: var(--on-error-container); }
 
     .about-row { display: flex; gap: 14px; align-items: center; }
