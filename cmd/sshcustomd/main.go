@@ -725,6 +725,54 @@ func run(args []string) {
 		}
 		writeV1OK(w, map[string]any{"selected_id": req.SelectedID, "restart": req.Restart})
 	})
+	mux.HandleFunc("/api/v1/profile/delete", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			writeV1Error(w, http.StatusMethodNotAllowed, errors.New("POST required"))
+			return
+		}
+		var req struct {
+			ID string `json:"id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeV1Error(w, http.StatusBadRequest, err)
+			return
+		}
+		if req.ID == "" {
+			writeV1Error(w, http.StatusBadRequest, errors.New("id is required"))
+			return
+		}
+		profileMu.Lock()
+		latest, err := loadProfiles(*profPath)
+		if err == nil {
+			found := false
+			filtered := make([]Profile, 0, len(latest.Profiles))
+			for _, p := range latest.Profiles {
+				if p.ID == req.ID {
+					found = true
+					continue
+				}
+				filtered = append(filtered, p)
+			}
+			if !found {
+				err = errors.New("profile not found")
+			} else {
+				latest.Profiles = filtered
+				if latest.SelectedID == req.ID {
+					latest.SelectedID = ""
+				}
+				err = saveProfiles(*profPath, latest)
+				if err == nil {
+					pf = latest
+				}
+			}
+		}
+		profileMu.Unlock()
+		if err != nil {
+			writeV1Error(w, http.StatusBadRequest, err)
+			return
+		}
+		writeV1OK(w, map[string]any{"deleted": req.ID})
+	})
 	mux.HandleFunc("/api/v1/profile/save", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			writeV1Error(w, http.StatusMethodNotAllowed, errors.New("POST required"))
