@@ -125,7 +125,7 @@
       font-weight: 800;
       letter-spacing: 0.02em;
     }
-    .li-icon { width: 32px; height: 32px; font-size: 0.65rem; }
+    .li-icon { width: 36px; height: 36px; font-size: 0.65rem; }
     .hero-title { margin: 0; font-size: 1rem; font-weight: 700; }
     .hero-subtitle {
       margin: 2px 0 0;
@@ -231,7 +231,7 @@
       border-radius: 12px;
     }
     .list-item-content { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
-    .list-item-content .supporting-text { flex-basis: 100%; margin-top: 4px; }
+    .list-item .supporting-text { width: 100%; margin-top: 4px; padding-left: 48px; }
     .toggle-text { font-size: 0.9375rem; font-weight: 700; line-height: 1.3; }
     .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -534,7 +534,7 @@
         <h2 class="section-pill">DNS</h2>
         <div class="list-container">
           <div class="list-item">
-            <div class="li-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
+            <div class="li-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
             <div class="list-item-content">
               <div class="toggle-text">DNS Mode</div>
             </div>
@@ -544,51 +544,51 @@
               <option value="cloudflare">Cloudflare DNS</option>
               <option value="custom">Custom DNS</option>
             </select>
-            <span class="supporting-text" style="width:100%">Applies to SSHCustom endpoint resolution. Device DNS is unaffected.</span>
+            <span class="supporting-text">Applies to SSHCustom endpoint resolution. Device DNS is unaffected.</span>
           </div>
           <div class="list-item" id="customDnsRow" hidden>
-            <div class="li-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+            <div class="li-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
             <div class="list-item-content">
               <div class="toggle-text">Custom Resolvers</div>
             </div>
-            <input id="customDnsServers" class="field" placeholder="1.1.1.1, 8.8.8.8" style="width:100%">
+            <input id="customDnsServers" class="field" placeholder="1.1.1.1, 8.8.8.8">
           </div>
         </div>
 
         <h2 class="section-pill">Sharing</h2>
         <div class="list-container">
           <div class="list-item">
-            <div class="li-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div>
+            <div class="li-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div>
             <div class="list-item-content">
               <div class="toggle-text">Share Hotspot TCP Tunnel</div>
             </div>
             <button id="hotspotSwitch" class="switch" onclick="toggleHotspot()" aria-label="Toggle hotspot"></button>
-            <span class="supporting-text" style="width:100%">Tether IPv4 TCP through SSHCustom for connected clients.</span>
+            <span class="supporting-text">Tether IPv4 TCP through SSHCustom for connected clients.</span>
           </div>
           <div class="list-item">
-            <div class="li-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div class="li-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
             <div class="list-item-content">
               <div class="toggle-text">Transparent IPv4 TCP</div>
             </div>
-            <span class="supporting-text" style="width:100%" id="transparentMeta">iptables REDIRECT status unavailable</span>
+            <span class="supporting-text" id="transparentMeta">iptables REDIRECT status unavailable</span>
           </div>
           <div class="list-item">
-            <div class="li-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div>
+            <div class="li-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div>
             <div class="list-item-content">
               <div class="toggle-text">SOCKS5 Local Proxy</div>
             </div>
-            <span class="supporting-text" style="width:100%" id="socksMeta">SOCKS status unavailable</span>
+            <span class="supporting-text" id="socksMeta">SOCKS status unavailable</span>
           </div>
         </div>
         <h2 class="section-pill">Boot</h2>
         <div class="list-container">
           <div class="list-item">
-            <div class="li-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 11-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></div>
+            <div class="li-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 11-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></div>
             <div class="list-item-content">
               <div class="toggle-text">Autostart on Boot</div>
             </div>
             <button id="autostartSwitch" class="switch" onclick="toggleAutostart()" aria-label="Toggle autostart"></button>
-            <span class="supporting-text" style="width:100%">Wait for connectivity (cap 30s) then start the daemon automatically.</span>
+            <span class="supporting-text">Wait for connectivity (cap 30s) then start the daemon automatically.</span>
           </div>
         </div>
 
@@ -603,10 +603,9 @@
               <p class="supporting-text" id="aboutVersion" style="margin:2px 0 0">version --</p>
             </div>
           </div>
-          <p class="supporting-text" style="margin:0">SSH-tunnel routing for rooted Android.<br>Built by <strong>GoodyOG</strong>.</p>
+          <p class="supporting-text" style="margin:0">Magisk / KernelSU module that routes Android TCP traffic through an SSH tunnel with transparent proxying.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <a class="chip primary about-link" href="https://github.com/GoodyOG/SSHCustom_Magisk" target="_blank" rel="noopener">Repository</a>
-            <a class="chip about-link" href="https://github.com/GoodyOG/SSHCustom_Magisk/issues" target="_blank" rel="noopener">Issues</a>
             <a class="chip about-link" href="https://github.com/GoodyOG/SSHCustom_Magisk/releases" target="_blank" rel="noopener">Releases</a>
           </div>
           <p class="supporting-text" style="margin:0;font-size:0.75rem;opacity:0.7">Licensed under Apache-2.0</p>
