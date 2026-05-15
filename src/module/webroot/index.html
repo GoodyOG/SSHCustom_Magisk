@@ -1071,6 +1071,8 @@
           renderPaths();
           renderAbout();
           toast('Tunnel restarted successfully.');
+          // Reconnect SSE since the old connection died with the daemon
+          startEvents();
           return;
         } catch (_) {
           await new Promise(r => setTimeout(r, 1000));
@@ -1078,7 +1080,7 @@
       }
       // Timed out but daemon might still be starting
       toast('Daemon restarting — check status in a moment.');
-      loadStatus();
+      startEvents();
     }
 
     function setLogKind(kind) {
@@ -1149,27 +1151,39 @@
     loadLog();
     loadAutostart();
 
-    // Try Server-Sent Events first; fall back to polling if it errors twice in
-    // a row (e.g. behind a buggy proxy or if the daemon is too old). The SSE
-    // stream pushes a fresh status payload on every state.set in the daemon,
-    // so the dashboard reacts instantly to reconnects, route flips, etc.
-    let sseFailures = 0;
-    let sseSource = null;
+    // --- REFRESH ENGINE ---
+    // Primary: reliable polling loop (like the proven old version).
+    // Enhancement: SSE for instant status updates when connected.
+    // The polling loop ALWAYS runs — SSE just makes status updates faster.
+    let tick = 0;
     let pollTimer = null;
+    let sseSource = null;
+
+    function refresh() {
+      tick++;
+      loadStatus();
+      // Refresh page-specific content on slower cadences
+      if (currentPage === 'profiles' && tick % 4 === 0) loadProfiles();
+      if (currentPage === 'runtime') {
+        if (tick % 3 === 0) loadDiagnostics();
+        if (tick % 4 === 0) loadLog();
+      }
+      if (tick % 20 === 0) loadPublicIP(false);
+    }
+
     function startPolling() {
       if (pollTimer) return;
-      pollTimer = setInterval(loadStatus, 3000);
+      pollTimer = setInterval(refresh, 3000);
     }
     function stopPolling() {
       if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     }
+
     function startEvents() {
+      if (sseSource) { try { sseSource.close(); } catch(_){} sseSource = null; }
       try {
-        sseSource = new EventSource(API + '/events');
-      } catch (e) {
-        startPolling();
-        return;
-      }
+        sseSource = new EventSource(API + '/api/v1/events');
+      } catch (e) { return; }
       sseSource.addEventListener('status', (ev) => {
         try {
           const data = JSON.parse(ev.data);
@@ -1179,24 +1193,21 @@
           renderStatus(data);
           renderPaths();
           renderAbout();
-          sseFailures = 0;
-          stopPolling();
         } catch (_) {}
       });
       sseSource.onerror = () => {
-        sseFailures += 1;
-        if (sseFailures >= 2) {
-          try { sseSource.close(); } catch (_) {}
-          sseSource = null;
-          startPolling();
-        }
+        // SSE died (daemon restarted, network blip, etc.) — close and retry in 5s.
+        // Polling keeps running regardless so the UI never freezes.
+        try { sseSource.close(); } catch(_) {}
+        sseSource = null;
+        setTimeout(startEvents, 5000);
       };
     }
+
+    // Always start polling + SSE together. Polling guarantees freshness;
+    // SSE makes it instant when it's working.
+    startPolling();
     startEvents();
-    // Diagnostics + public IP are not on the SSE channel — they are pulled on
-    // their own slower cadence to avoid excess work for screens nobody is on.
-    setInterval(loadDiagnostics, 8000);
-    setInterval(() => loadPublicIP(false), 60000);
   </script>
 </body>
 </html>
