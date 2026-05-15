@@ -7,12 +7,4 @@ Third-party components:
 
 1. golang.org/x/crypto — BSD 3-Clause (The Go Authors)
    Vendored in third_party/ with local modifications.
-
-2. libsu — Apache-2.0 (John Wu / topjohnwu)
-   Used by the companion app for root command execution.
-
-3. OkHttp + okhttp-sse — Apache-2.0 (Square, Inc.)
-
-4. Jetpack Compose / AndroidX — Apache-2.0 (Google LLC)
-
-5. Kotlin + kotlinx.serialization — Apache-2.0 (JetBrains s.r.o.)
+   See third_party/PATCHES.md for details.

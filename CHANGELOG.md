@@ -4,6 +4,30 @@ All notable changes to SSHCustom_Magisk are recorded here. Format is loosely
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] — 2026-05-15
+
+### Fixed
+
+- **"Save, Use & Restart" now works reliably.** Reverted from the
+  unreliable in-process `softRestart` mechanism to the proven
+  `scheduleControl("restart")` which shells out to `sshcustom.sh restart`
+  — kills the daemon and starts fresh. Works on all Android devices.
+
+### Changed
+
+- **WebUI overhauled**: page titles with icons on all 4 tabs, improved
+  card spacing (24px between sections), reduced settings icon size,
+  better elevation hierarchy, "Apply & Restart" button moved to bottom
+  of Settings page.
+- **Companion app removed.** The WebUI does everything; users access it
+  via browser or KSU-Next's module WebUI feature. Removes 3000+ lines
+  of Kotlin and the APK build from CI.
+
+### Removed
+
+- Entire `app/` directory, Gradle build system, APK signing workflow.
+- Stale Android-related entries in `.gitignore`.
+
 ## [2.0.0] — 2026-05-14
 
 A full rebuild. The module's runtime behaviour is compatible with v1
@@ -100,5 +124,6 @@ profiles, but the WebUI, daemon internals, and release shape all changed.
 Initial production rebuild. Tagged after the v2 work began as `v1.0.0`
 on GitHub for archival reference.
 
+[2.0.3]: https://github.com/GoodyOG/SSHCustom_Magisk/releases/tag/v2.0.3
 [2.0.0]: https://github.com/GoodyOG/SSHCustom_Magisk/releases/tag/v2.0.0
 [1.0.0]: https://github.com/GoodyOG/SSHCustom_Magisk/releases/tag/v1.0.0

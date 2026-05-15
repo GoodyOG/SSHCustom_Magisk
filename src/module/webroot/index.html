@@ -104,7 +104,7 @@
       color: var(--on-surface);
       overflow: hidden;
     }
-    .hero-card { background: var(--surface-low); }
+    .hero-card { background: var(--surface-mid); border: 1px solid var(--surface-highest); }
     .hero-card__body {
       display: flex;
       align-items: center;
@@ -125,7 +125,7 @@
       font-weight: 800;
       letter-spacing: 0.02em;
     }
-    .li-icon { width: 40px; height: 40px; }
+    .li-icon { width: 36px; height: 36px; font-size: 0.7rem; }
     .hero-title { margin: 0; font-size: 1rem; font-weight: 700; }
     .hero-subtitle {
       margin: 2px 0 0;
@@ -167,14 +167,15 @@
     .md3-danger { background: var(--error-container); color: var(--on-error-container); }
     .md3-tonal:disabled, .md3-filled:disabled, .md3-text:disabled { opacity: 0.45; pointer-events: none; }
 
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .info-card {
       min-height: 96px;
       padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      background: var(--surface-highest);
+      background: var(--surface-high);
+      border-radius: 14px;
     }
     .info-card.primary { background: var(--primary-container); color: var(--on-primary-container); }
     .info-label { margin: 0; color: inherit; font-size: 0.875rem; font-weight: 700; }
@@ -202,7 +203,7 @@
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      margin: 8px 0 0;
+      margin: 24px 0 4px;
     }
     .list-container {
       width: 100%;
@@ -396,6 +397,14 @@
       .nav-label { display: none; }
       .nav-tab.active { padding: 12px 18px; }
     }
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .page-header svg { width: 22px; height: 22px; color: var(--primary); flex-shrink: 0; }
+    .page-header h2 { margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--on-surface); }
   </style>
 </head>
 <body>
@@ -409,6 +418,10 @@
     <main id="pages">
       <!-- HOME -->
       <section id="page-home">
+        <div class="page-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <h2>Home</h2>
+        </div>
         <div class="card hero-card">
           <div class="hero-card__body">
             <div class="hero-icon" id="heroIcon">SSH</div>
@@ -451,6 +464,10 @@
 
       <!-- PROFILES -->
       <section id="page-profiles" hidden>
+        <div class="page-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <h2>Profiles</h2>
+        </div>
         <div class="button-row">
           <button class="md3-filled" onclick="openProfileEditor('')">New Profile</button>
           <button class="md3-tonal" onclick="loadProfiles()">Refresh Profiles</button>
@@ -461,6 +478,10 @@
 
       <!-- RUNTIME -->
       <section id="page-runtime" hidden>
+        <div class="page-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <h2>Runtime</h2>
+        </div>
         <h2 class="section-pill">Details</h2>
         <div class="info-grid">
           <div class="card info-card primary">
@@ -512,6 +533,10 @@
 
       <!-- SETTINGS -->
       <section id="page-settings" hidden>
+        <div class="page-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          <h2>Settings</h2>
+        </div>
         <h2 class="section-pill">DNS</h2>
         <div class="list-container">
           <div class="list-item">
@@ -562,8 +587,6 @@
             </div>
           </div>
         </div>
-        <button class="md3-filled" onclick="saveNetwork()">Apply Network Settings</button>
-
         <h2 class="section-pill">Boot</h2>
         <div class="list-container">
           <div class="list-item">
@@ -576,6 +599,8 @@
             <button id="autostartSwitch" class="switch" onclick="toggleAutostart()" aria-label="Toggle autostart"></button>
           </div>
         </div>
+
+        <button class="md3-filled" onclick="saveNetwork()" style="margin-top:20px">Apply &amp; Restart</button>
 
         <h2 class="section-pill">About</h2>
         <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px">

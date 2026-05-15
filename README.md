@@ -12,34 +12,28 @@ Magisk / KernelSU module that routes Android TCP traffic through an SSH tunnel w
 - Pluggable transport: direct SSH, HTTP proxy, TLS/SNI, payload injection
 - Hotspot tethering shares the tunnel with connected clients
 - Local dashboard at `http://127.0.0.1:9190/`
-- Native Android companion app with Material You, Quick Settings Tile, and boot autostart
+- Autostart on boot with connectivity-aware delay
 - Real-time status via Server-Sent Events
 
 Runs on rooted Android (Magisk or KernelSU), `arm64-v8a` and `armeabi-v7a`.
 
 ## Install
 
-1. Download from [Releases](https://github.com/GoodyOG/SSHCustom_Magisk/releases/latest):
-   - `SSHCustom-Magisk-vX.Y.Z.zip` — module
-   - `app-release.apk` — companion app
+1. Download `SSHCustom-Magisk-vX.Y.Z.zip` from [Releases](https://github.com/GoodyOG/SSHCustom_Magisk/releases/latest).
 2. Flash the ZIP via Magisk/KernelSU, reboot.
 3. Tap the module action button to start.
-4. Open the app or visit `http://127.0.0.1:9190/` to manage profiles.
+4. Open `http://127.0.0.1:9190/` in your browser (or via KSU-Next's module WebUI) to manage profiles.
 5. Save a profile with **Save, Use & Restart** to connect.
 
 ## Build from source
 
-**Module + daemon** (needs Go 1.23+, Python 3):
+Requires Go 1.23+ and Python 3:
 
 ```bash
 ./build.sh
 ```
 
-**Companion app** (needs Java 17, Android SDK 35):
-
-```bash
-./gradlew :app:assembleDebug
-```
+Output: `dist/SSHCustom-Magisk-v*.zip`
 
 ## API
 

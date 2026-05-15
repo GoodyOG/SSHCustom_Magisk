@@ -6,25 +6,10 @@ dist/
 *.prof
 sshcustomd-host
 
-# Android / Gradle
-.gradle/
-.kotlin/
-build/
-local.properties
-captures/
-.cxx/
-*.apk
-*.aab
-*.ap_
-*.dex
-*.class
-
 # IDE
 .idea/
 .vscode/
 *.iml
-*.iws
-*.ipr
 
 # OS
 .DS_Store
@@ -38,8 +23,3 @@ __pycache__/
 # Backups
 *.bak
 *.tmp
-
-# Signing — never commit
-keystore.properties
-*.jks
-*.keystore
