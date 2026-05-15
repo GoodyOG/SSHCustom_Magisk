@@ -40,6 +40,11 @@ import (
 // time. The package alias keeps the existing call sites working.
 var Version = version.Version
 
+// softRestart is set by the run() function once the connection manager is
+// running. Calling it tears down the current SSH pool and reconnects with
+// the latest on-disk profile. Used by profile save/select with restart=true.
+var softRestart func()
+
 const defaultCopyBufferSize = 128 * 1024
 const maxCopyBufferSize = 256 * 1024
 
@@ -650,10 +655,7 @@ func run(args []string) {
 			}
 			restartPending := false
 			if req.Restart && restartRequired {
-				if err := scheduleControl(*workDir, "restart"); err != nil {
-					writeV1Error(w, http.StatusBadRequest, err)
-					return
-				}
+				go softRestart()
 				restartPending = true
 			}
 			writeV1OK(w, apiv1.ConfigUpdateResponse{
@@ -722,7 +724,7 @@ func run(args []string) {
 			return
 		}
 		if req.Restart {
-			_ = scheduleControl(*workDir, "restart")
+			go softRestart()
 		}
 		writeV1OK(w, map[string]any{"selected_id": req.SelectedID, "restart": req.Restart})
 	})
@@ -753,7 +755,7 @@ func run(args []string) {
 			return
 		}
 		if req.Restart {
-			_ = scheduleControl(*workDir, "restart")
+			go softRestart()
 		}
 		writeV1OK(w, map[string]any{"selected_id": req.ID, "restart": req.Restart})
 	})
@@ -946,7 +948,45 @@ func run(args []string) {
 	}
 
 	go startMetricsSampler(ctx, state)
-	go connectionManager(ctx, cfg, *sp, state)
+
+	// Soft-restart: the connection manager runs in a sub-context that can be
+	// cancelled independently of the daemon's main ctx. When a profile save
+	// or select fires with restart=true, we cancel the sub-context, re-read
+	// the profile from disk, and launch a new connection manager. This makes
+	// "Save, Use & Restart" work instantly without relying on the shell-based
+	// scheduleControl (which fails on some SELinux-restricted devices).
+	var connCancel context.CancelFunc
+	var connCtx context.Context
+	startConnMgr := func() {
+		profileMu.Lock()
+		sp2 := selectedProfile(pf)
+		profileMu.Unlock()
+		if sp2 == nil {
+			log.Printf("soft-restart: no selected profile, connection manager not started")
+			return
+		}
+		connCtx, connCancel = context.WithCancel(ctx)
+		go connectionManager(connCtx, cfg, *sp2, state)
+	}
+	startConnMgr()
+
+	// softRestart is called by profile save/select handlers when restart=true.
+	softRestart = func() {
+		log.Printf("soft-restart: tearing down connection manager and reconnecting with updated profile")
+		if connCancel != nil {
+			connCancel()
+		}
+		// Give the old connection manager time to clean up (close pool, iptables)
+		time.Sleep(500 * time.Millisecond)
+		state.set(func() {
+			state.State = "RESTARTING"
+			state.Connected = false
+			state.TransportReady = false
+			state.SSHAuthenticated = false
+			state.LastEvent = "soft-restart: reconnecting with updated profile"
+		})
+		startConnMgr()
+	}
 
 	<-ctx.Done()
 	log.Printf("shutdown signal received")

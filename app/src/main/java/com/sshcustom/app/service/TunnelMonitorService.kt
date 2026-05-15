@@ -77,41 +77,49 @@ class TunnelMonitorService : Service() {
 
     private fun connect() {
         if (sse != null || pollJob != null) return
-        sse = ApiClient.openEvents(object : EventSourceListener() {
-            override fun onOpen(eventSource: EventSource, response: Response) {
-                stopPolling()
-                updateNotif(getString(R.string.notif_monitor_text_busy))
-            }
-
-            override fun onEvent(eventSource: EventSource, id: String?, type: String?, data: String) {
-                if (type != "status") return
-                runCatching {
-                    ApiClient.json.decodeFromString(StatusData.serializer(), data)
-                }.onSuccess { status ->
-                    lastStatus = status
-                    updateNotif(notifText(status))
+        // Try to reach the daemon first. If it's unreachable (module not
+        // started), fall back to polling which will gracefully show "offline"
+        // until the daemon comes up.
+        try {
+            sse = ApiClient.openEvents(object : EventSourceListener() {
+                override fun onOpen(eventSource: EventSource, response: Response) {
+                    stopPolling()
+                    updateNotif(getString(R.string.notif_monitor_text_busy))
                 }
-            }
 
-            override fun onFailure(eventSource: EventSource, t: Throwable?, response: Response?) {
-                sse = null
-                // Fall back to slow polling. We don't aggressively reconnect
-                // SSE here because the foreground service is a passive
-                // observer; if the user re-opens the app, MainActivity
-                // restarts the connection through MainViewModel.
-                startPolling()
-            }
-        })
+                override fun onEvent(eventSource: EventSource, id: String?, type: String?, data: String) {
+                    if (type != "status") return
+                    runCatching {
+                        ApiClient.json.decodeFromString(StatusData.serializer(), data)
+                    }.onSuccess { status ->
+                        lastStatus = status
+                        updateNotif(notifText(status))
+                    }
+                }
+
+                override fun onFailure(eventSource: EventSource, t: Throwable?, response: Response?) {
+                    sse = null
+                    startPolling()
+                }
+            })
+        } catch (_: Exception) {
+            // ApiClient not initialized or other early failure — fall back
+            startPolling()
+        }
     }
 
     private fun startPolling() {
         if (pollJob != null) return
         pollJob = scope.launch {
             while (true) {
-                ApiClient.status().onSuccess { status ->
-                    lastStatus = status
-                    updateNotif(notifText(status))
-                }.onFailure {
+                try {
+                    ApiClient.status().onSuccess { status ->
+                        lastStatus = status
+                        updateNotif(notifText(status))
+                    }.onFailure {
+                        updateNotif(getString(R.string.notif_monitor_text_offline))
+                    }
+                } catch (_: Exception) {
                     updateNotif(getString(R.string.notif_monitor_text_offline))
                 }
                 delay(5000)

@@ -65,12 +65,22 @@
     .network-chip {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      color: var(--tertiary);
+      gap: 8px;
+      color: var(--on-surface);
       font-size: 0.8125rem;
       font-weight: 600;
     }
-    .network-chip.offline { color: var(--error); }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--error);
+      box-shadow: 0 0 6px 2px var(--error);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .status-dot.connected { background: var(--good); box-shadow: 0 0 8px 3px var(--good); animation: none; }
+    .status-dot.connecting { background: var(--warn); box-shadow: 0 0 6px 2px var(--warn); }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
     #pages {
       width: min(100%, 860px);
@@ -302,7 +312,7 @@
       background: var(--secondary-container);
       color: var(--on-secondary-container);
     }
-    .nav-icon { font-size: 0.9rem; font-weight: 900; }
+    .nav-icon { width: 20px; height: 20px; flex-shrink: 0; }
     .nav-label {
       max-width: 0;
       opacity: 0;
@@ -393,7 +403,7 @@
     <header class="app-top-bar">
       <h1 class="app-title">SSHCustom-Magisk</h1>
       <div class="spacer"></div>
-      <span id="networkChip" class="network-chip">offline</span>
+      <span id="networkChip" class="network-chip"><span id="statusDot" class="status-dot"></span><span id="statusText">offline</span></span>
     </header>
 
     <main id="pages">
@@ -585,17 +595,17 @@
             <a class="chip about-link" href="https://github.com/GoodyOG/SSHCustom_Magisk/releases" target="_blank" rel="noopener">Releases</a>
           </div>
           <p class="supporting-text" style="margin:0">
-            Module and daemon: Apache-2.0. Companion app: GPL-3.0.
+            Licensed under Apache-2.0.
           </p>
         </div>
       </section>
     </main>
 
     <nav class="nav-bar" aria-label="Main navigation">
-      <button class="nav-tab active" data-page="home" onclick="showPage('home')"><span class="nav-icon">H</span><span class="nav-label">Home</span></button>
-      <button class="nav-tab" data-page="profiles" onclick="showPage('profiles')"><span class="nav-icon">P</span><span class="nav-label">Profiles</span></button>
-      <button class="nav-tab" data-page="runtime" onclick="showPage('runtime')"><span class="nav-icon">R</span><span class="nav-label">Runtime</span></button>
-      <button class="nav-tab" data-page="settings" onclick="showPage('settings')"><span class="nav-icon">S</span><span class="nav-label">Settings</span></button>
+      <button class="nav-tab active" data-page="home" onclick="showPage('home')"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></button>
+      <button class="nav-tab" data-page="profiles" onclick="showPage('profiles')"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span class="nav-label">Profiles</span></button>
+      <button class="nav-tab" data-page="runtime" onclick="showPage('runtime')"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nav-label">Runtime</span></button>
+      <button class="nav-tab" data-page="settings" onclick="showPage('settings')"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span class="nav-label">Settings</span></button>
     </nav>
   </div>
 
@@ -778,16 +788,14 @@
       const cfg = data.config || {};
       const connected = !!(s.connected && s.ssh_authenticated);
       const busy = !!(s.running && !connected);
-      $('networkChip').textContent = connected ? 'connected' : busy ? 'connecting' : 'offline';
-      $('networkChip').className = 'network-chip' + (!connected && !busy ? ' offline' : '');
+      $('statusDot').className = 'status-dot' + (connected ? ' connected' : busy ? ' connecting' : '');
+      $('statusText').textContent = connected ? 'connected' : busy ? 'connecting' : 'offline';
       $('heroIcon').textContent = connected ? 'ON' : busy ? '...' : 'OFF';
       $('heroTitle').textContent = connected ? 'Tunnel Connected' : busy ? (s.state || 'Connecting') : 'Daemon offline';
       $('heroSubtitle').textContent = s.last_error || s.last_event || (connected ? 'Transparent TCP and local SOCKS are available.' : 'Start SSHCustom-Magisk from the module action button.');
       const chips = [];
       chips.push(`<span class="chip ${connected ? 'primary' : busy ? 'warn' : 'error'}">${connected ? 'connected' : busy ? 'connecting' : 'offline'}</span>`);
       if (s.selected_profile) chips.push(`<span class="chip">profile: ${esc(s.selected_profile)}</span>`);
-      if (s.dns_mode || (cfg.dns && cfg.dns.mode)) chips.push(`<span class="chip">dns: ${esc(s.dns_mode || cfg.dns.mode)}</span>`);
-      if (s.interface) chips.push(`<span class="chip">via: ${esc(s.interface)}</span>`);
       $('heroChips').innerHTML = chips.join('');
 
       // Local Device IP comes from the daemon's pure-Go route probe (UDP connect
@@ -820,8 +828,8 @@
 
     function renderOffline() {
       statusData = null;
-      $('networkChip').textContent = 'offline';
-      $('networkChip').className = 'network-chip offline';
+      $('statusDot').className = 'status-dot';
+      $('statusText').textContent = 'offline';
       $('heroIcon').textContent = 'OFF';
       $('heroTitle').textContent = 'Daemon offline';
       $('heroSubtitle').textContent = 'Start SSHCustom-Magisk from the Magisk or KernelSU action button.';
