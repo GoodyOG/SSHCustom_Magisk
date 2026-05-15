@@ -32,8 +32,13 @@ Runs on rooted Android (Magisk or KernelSU), `arm64-v8a` and `armeabi-v7a`.
 1. Download `SSHCustom-Magisk-vX.Y.Z.zip` from [Releases](https://github.com/GoodyOG/SSHCustom-Magisk/releases/latest).
 2. Flash the ZIP via Magisk/KernelSU, reboot.
 3. Tap the module action button to start.
-4. Open `http://127.0.0.1:9190/` in your browser (or via KSU-Next's module WebUI) to manage profiles.
-5. Save a profile with **Save, Use & Restart** to connect.
+4. Open the WebUI to manage profiles and save with **Save & Restart** to connect.
+
+**Accessing the WebUI:**
+
+- **KernelSU / KSU-Next** — open the module WebUI directly from the manager.
+- **Magisk** — install [KsuWebUI Standalone](https://github.com/KOWX712/KsuWebUIStandalone/releases), grant it root access, then open SSHCustom's WebUI from within it.
+- **Browser** — navigate to `http://127.0.0.1:9190/` on the device.
 
 ## Build from source
 
