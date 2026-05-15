@@ -85,7 +85,7 @@
     #pages {
       width: min(100%, 860px);
       margin: 0 auto;
-      padding: 16px 16px 80px;
+      padding: 16px 16px calc(80px + env(safe-area-inset-bottom, 0px));
     }
     section:not([hidden]) {
       display: flex;
@@ -304,10 +304,10 @@
       display: flex;
       align-items: stretch;
       justify-content: space-around;
-      height: 64px;
+      min-height: 64px;
       background: var(--surface-high);
       border-top: 1px solid var(--surface-highest);
-      padding: 0;
+      padding: 0 0 env(safe-area-inset-bottom, 0px);
     }
     .nav-tab {
       flex: 1;
@@ -445,7 +445,7 @@
         </div>
 
         <div class="info-grid">
-          <div class="card info-card primary">
+          <div class="card info-card">
             <svg class="info-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
             <div class="info-card__text">
               <p class="info-label">Tunnel Exit IP</p>
@@ -1134,7 +1134,9 @@
     async function loadLog() {
       try {
         const res = await fetch(API + '/api/v1/logs/' + currentLog, { signal: AbortSignal.timeout(7000) });
-        $('runtimeLog').textContent = res.ok ? await res.text() : 'Log unavailable';
+        const el = $('runtimeLog');
+        el.textContent = res.ok ? await res.text() : 'Log unavailable';
+        el.scrollTop = el.scrollHeight;
       } catch (e) {
         $('runtimeLog').textContent = 'Log unavailable: ' + e.message;
       }
