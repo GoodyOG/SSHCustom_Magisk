@@ -40,10 +40,11 @@ import (
 // time. The package alias keeps the existing call sites working.
 var Version = version.Version
 
-// softRestart is set by the run() function once the connection manager is
-// running. Calling it tears down the current SSH pool and reconnects with
-// the latest on-disk profile. Used by profile save/select with restart=true.
-var softRestart func()
+// softRestart is called by profile save/select handlers when restart=true.
+// It tears down the current SSH pool and reconnects with the latest on-disk
+// profile. Initialized as a no-op so handlers never panic on nil during the
+// brief startup window before the connection manager is ready.
+var softRestart func() = func() {}
 
 const defaultCopyBufferSize = 128 * 1024
 const maxCopyBufferSize = 256 * 1024
@@ -958,13 +959,20 @@ func run(args []string) {
 	var connCancel context.CancelFunc
 	var connCtx context.Context
 	startConnMgr := func() {
+		// Always re-read from disk so soft-restart picks up the latest
+		// profile/select state, not a potentially stale in-memory copy.
 		profileMu.Lock()
+		fresh, err := loadProfiles(*profPath)
+		if err == nil {
+			pf = fresh
+		}
 		sp2 := selectedProfile(pf)
 		profileMu.Unlock()
 		if sp2 == nil {
 			log.Printf("soft-restart: no selected profile, connection manager not started")
 			return
 		}
+		log.Printf("soft-restart: starting connection manager with profile %q (mode=%s)", sp2.Name, sp2.Transport.Mode)
 		connCtx, connCancel = context.WithCancel(ctx)
 		go connectionManager(connCtx, cfg, *sp2, state)
 	}
@@ -976,8 +984,10 @@ func run(args []string) {
 		if connCancel != nil {
 			connCancel()
 		}
-		// Give the old connection manager time to clean up (close pool, iptables)
-		time.Sleep(500 * time.Millisecond)
+		// Give the old connection manager time to clean up (close pool, remove
+		// iptables rules). 1.5s is generous enough for slow devices where
+		// iptables flush can take 200-500ms per chain.
+		time.Sleep(1500 * time.Millisecond)
 		state.set(func() {
 			state.State = "RESTARTING"
 			state.Connected = false

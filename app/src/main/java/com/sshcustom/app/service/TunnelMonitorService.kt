@@ -25,47 +25,25 @@ import okhttp3.sse.EventSource
 import okhttp3.sse.EventSourceListener
 
 /**
- * Foreground service. Two responsibilities:
- *
- * 1. **Persistent reminder.** The notification stays visible while the
- *    user has the app or the tile in active use, so it's clear which
- *    process owns the SSH tunnel surface.
- * 2. **Live status pipe.** The service holds a long-lived SSE connection
- *    to /api/v1/events and updates the notification text every time the
- *    daemon's state changes. On Android 8+ this is the most reliable way
- *    to keep a network read alive across battery savers and Doze.
- *
- * Lifecycle:
- *   - Started by MainActivity when the user opens the app.
- *   - Started by BootReceiver after BOOT_COMPLETED.
- *   - Stopped only when the user explicitly removes the app from recents
- *     AND the daemon is offline (see hasOpenWork()). The service does
- *     NOT auto-stop on activity destruction so the user keeps getting
- *     notification updates with the app backgrounded.
- *
- * If SSE fails (legacy daemon, proxy weirdness, etc.) we fall back to
- * polling /api/v1/status every 5 s — same fallback the WebUI uses.
+ * Foreground service that keeps a live status connection to the daemon
+ * and updates the persistent notification. Falls back to polling if
+ * SSE is unavailable (daemon offline or not initialized yet).
  */
 class TunnelMonitorService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var sse: EventSource? = null
     private var pollJob: Job? = null
-    private var lastStatus: StatusData? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
-        startForegroundCompat(buildNotif(text = getString(R.string.notif_monitor_text_busy)))
+        startForegroundCompat(buildNotif(getString(R.string.notif_monitor_text_busy)))
         connect()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // onCreate already started the foreground state; STICKY so Android
-        // restarts us if the process is killed.
-        return START_STICKY
-    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onDestroy() {
         sse?.cancel()
@@ -77,24 +55,17 @@ class TunnelMonitorService : Service() {
 
     private fun connect() {
         if (sse != null || pollJob != null) return
-        // Try to reach the daemon first. If it's unreachable (module not
-        // started), fall back to polling which will gracefully show "offline"
-        // until the daemon comes up.
         try {
-            sse = ApiClient.openEvents(object : EventSourceListener() {
+            val source = ApiClient.openEvents(object : EventSourceListener() {
                 override fun onOpen(eventSource: EventSource, response: Response) {
                     stopPolling()
-                    updateNotif(getString(R.string.notif_monitor_text_busy))
                 }
 
                 override fun onEvent(eventSource: EventSource, id: String?, type: String?, data: String) {
                     if (type != "status") return
                     runCatching {
                         ApiClient.json.decodeFromString(StatusData.serializer(), data)
-                    }.onSuccess { status ->
-                        lastStatus = status
-                        updateNotif(notifText(status))
-                    }
+                    }.onSuccess { updateNotif(notifText(it)) }
                 }
 
                 override fun onFailure(eventSource: EventSource, t: Throwable?, response: Response?) {
@@ -102,8 +73,13 @@ class TunnelMonitorService : Service() {
                     startPolling()
                 }
             })
+            if (source != null) {
+                sse = source
+            } else {
+                // ApiClient not initialized — fall back to polling
+                startPolling()
+            }
         } catch (_: Exception) {
-            // ApiClient not initialized or other early failure — fall back
             startPolling()
         }
     }
@@ -113,12 +89,9 @@ class TunnelMonitorService : Service() {
         pollJob = scope.launch {
             while (true) {
                 try {
-                    ApiClient.status().onSuccess { status ->
-                        lastStatus = status
-                        updateNotif(notifText(status))
-                    }.onFailure {
-                        updateNotif(getString(R.string.notif_monitor_text_offline))
-                    }
+                    ApiClient.status()
+                        .onSuccess { updateNotif(notifText(it)) }
+                        .onFailure { updateNotif(getString(R.string.notif_monitor_text_offline)) }
                 } catch (_: Exception) {
                     updateNotif(getString(R.string.notif_monitor_text_offline))
                 }
@@ -136,9 +109,7 @@ class TunnelMonitorService : Service() {
         val rt = status.runtime
         return when {
             rt.connected && rt.sshAuthenticated -> {
-                val via = rt.iface.takeIf { it.isNotBlank() }
-                    ?: rt.selectedProfile.takeIf { it.isNotBlank() }
-                    ?: "tunnel"
+                val via = rt.selectedProfile.ifBlank { "tunnel" }
                 getString(R.string.notif_monitor_text_connected, via)
             }
             rt.running -> getString(R.string.notif_monitor_text_busy)

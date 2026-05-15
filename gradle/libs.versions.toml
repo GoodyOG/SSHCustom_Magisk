@@ -1,48 +1,21 @@
-# Centralized dependency catalog. Bump versions here only.
+# Centralized dependency catalog.
 
 [versions]
 agp = "8.7.3"
 kotlin = "2.0.21"
-ksp = "2.0.21-1.0.27"
 serialization = "1.7.3"
 coroutines = "1.9.0"
-compose-bom = "2024.10.01"
-activity-compose = "1.9.3"
 core-ktx = "1.15.0"
 lifecycle = "2.8.7"
-navigation = "2.8.4"
-webkit = "1.12.1"
-datastore = "1.1.1"
-material-icons = "1.7.5"
-material-views = "1.12.0"
+activity = "1.9.3"
 libsu = "6.0.0"
 okhttp = "4.12.0"
 junit = "4.13.2"
-androidx-junit = "1.2.1"
 
 [libraries]
-androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
-androidx-compose-ui = { module = "androidx.compose.ui:ui" }
-androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
-androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
-androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
-androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
-androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
-androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "material-icons" }
-
-# Material Components for Android — only needed for the XML splash theme
-# parent (`Theme.Material3.DayNight.NoActionBar`). Compose itself does not
-# use this library; we keep it pinned to a recent stable.
-material-views = { module = "com.google.android.material:material", version.ref = "material-views" }
-
-androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
-androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
-androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
-androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
-androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
-androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+androidx-activity = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
 
 libsu-core = { module = "com.github.topjohnwu.libsu:core", version.ref = "libsu" }
 
@@ -53,10 +26,8 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 
 junit = { module = "junit:junit", version.ref = "junit" }
-androidx-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-junit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

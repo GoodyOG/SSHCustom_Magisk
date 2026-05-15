@@ -2,77 +2,11 @@
 <resources>
     <string name="app_name">SSHCustom</string>
 
-    <!-- Tabs -->
-    <string name="tab_home">Home</string>
-    <string name="tab_profiles">Profiles</string>
-    <string name="tab_runtime">Runtime</string>
-    <string name="tab_settings">Settings</string>
-
-    <!-- Home -->
-    <string name="home_state_offline">Daemon offline</string>
-    <string name="home_state_connecting">Connecting</string>
-    <string name="home_state_connected">Tunnel Connected</string>
-    <string name="home_subtitle_offline">Start SSHCustom from the Magisk or KernelSU action button. The app will auto-detect the daemon when it comes up.</string>
-    <string name="home_action_restart">Restart Tunnel</string>
-    <string name="home_action_stop">Stop and Clean</string>
-    <string name="home_card_tunnel_ip">Tunnel Exit IP</string>
-    <string name="home_card_device_ip">Device IP</string>
-    <string name="home_card_runtime">Runtime</string>
-    <string name="home_card_performance">Performance</string>
-
-    <!-- Profiles -->
-    <string name="profiles_new">New Profile</string>
-    <string name="profiles_refresh">Refresh</string>
-    <string name="profiles_export">Export</string>
-    <string name="profiles_import">Import</string>
-    <string name="profiles_empty_title">No profiles</string>
-    <string name="profiles_empty_subtitle">Create a profile to start tunneling.</string>
-    <string name="profile_save">Save</string>
-    <string name="profile_save_use_restart">Save, Use &amp; Restart</string>
-    <string name="profile_use">Use</string>
-    <string name="profile_edit">Edit</string>
-    <string name="profile_active">active</string>
-
-    <!-- Runtime / Logs -->
-    <string name="runtime_section_details">Details</string>
-    <string name="runtime_section_paths">Paths</string>
-    <string name="runtime_section_logs">Logs</string>
-    <string name="runtime_log_core">Core</string>
-    <string name="runtime_log_control">Control</string>
-    <string name="runtime_log_action">Action</string>
-    <string name="runtime_log_clear">Clear Log</string>
-    <string name="runtime_log_clear_confirm_title">Clear log?</string>
-    <string name="runtime_log_clear_confirm_body">This permanently truncates the log file on disk. The daemon keeps writing new entries afterwards.</string>
-
-    <!-- Settings -->
-    <string name="settings_section_dns">DNS</string>
-    <string name="settings_section_sharing">Sharing</string>
-    <string name="settings_section_boot">Boot</string>
-    <string name="settings_section_about">About</string>
-    <string name="settings_dns_mode">DNS Mode</string>
-    <string name="settings_dns_subtitle">Applies to SSHCustom endpoint resolution. Device DNS is unaffected.</string>
-    <string name="settings_dns_custom_label">Custom Resolvers</string>
-    <string name="settings_hotspot_title">Share Hotspot TCP Tunnel</string>
-    <string name="settings_hotspot_subtitle">Tether IPv4 TCP through SSHCustom for connected clients.</string>
-    <string name="settings_autostart_title">Autostart on Boot</string>
-    <string name="settings_autostart_subtitle">Wait for connectivity (cap 30s) then start the daemon automatically. Off by default.</string>
-    <string name="settings_apply">Apply Network Settings</string>
-    <string name="about_built_by">Built by GoodyOG. SSH-tunnel routing for rooted Android via Magisk and KernelSU.</string>
-    <string name="about_repo">Repository</string>
-    <string name="about_issues">Report Issue</string>
-    <string name="about_releases">Releases</string>
-    <string name="about_license">Module and daemon: Apache-2.0. Companion app: GPL-3.0.</string>
-
     <!-- Service / notification -->
     <string name="notif_channel_monitor">Tunnel Monitor</string>
-    <string name="notif_channel_monitor_desc">Persistent reminder that the SSHCustom control surface is active.</string>
+    <string name="notif_channel_monitor_desc">Persistent notification for the SSHCustom tunnel status.</string>
     <string name="notif_monitor_title">SSHCustom</string>
-    <string name="notif_monitor_text_connected">Tunnel connected via %1$s</string>
+    <string name="notif_monitor_text_connected">Connected via %1$s</string>
     <string name="notif_monitor_text_offline">Daemon offline</string>
-    <string name="notif_monitor_text_busy">Connecting…</string>
-
-    <!-- Errors -->
-    <string name="err_root_unavailable">Root access denied. SSHCustom needs root to control the daemon.</string>
-    <string name="err_daemon_unreachable">Cannot reach the daemon at 127.0.0.1:9190. Make sure the module is enabled.</string>
-
+    <string name="notif_monitor_text_busy">Connecting\u2026</string>
 </resources>

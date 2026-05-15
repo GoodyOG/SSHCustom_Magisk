@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Static theme used until the Compose layer takes over.
-     Compose itself drives the actual Material 3 colors at runtime via
-     dynamicDarkColorScheme(context) on API 31+ (auto Material You) and a
-     fixed dark fallback on API 26-30. -->
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Splash theme so the launcher icon shows immediately while the
-         Compose root warms up. Edge-to-edge is enabled in MainActivity. -->
-    <style name="Theme.SshCustom.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.SshCustom.Splash" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/splash_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
@@ -17,7 +11,7 @@
         <item name="android:windowLightStatusBar">false</item>
     </style>
 
-    <style name="Theme.SshCustom" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.SshCustom" parent="android:Theme.Material.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
