@@ -85,12 +85,12 @@
     #pages {
       width: min(100%, 860px);
       margin: 0 auto;
-      padding: 16px 16px 96px;
+      padding: 16px 16px 80px;
     }
     section:not([hidden]) {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       animation: page-enter 350ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
     @keyframes page-enter {
@@ -112,8 +112,8 @@
       padding: 16px;
     }
     .hero-icon, .li-icon {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -121,11 +121,11 @@
       background: var(--primary-container);
       color: var(--on-primary-container);
       flex-shrink: 0;
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
       font-weight: 800;
       letter-spacing: 0.02em;
     }
-    .li-icon { width: 36px; height: 36px; font-size: 0.7rem; }
+    .li-icon { width: 32px; height: 32px; font-size: 0.65rem; }
     .hero-title { margin: 0; font-size: 1rem; font-weight: 700; }
     .hero-subtitle {
       margin: 2px 0 0;
@@ -151,7 +151,7 @@
     .chip.warn { background: var(--tertiary-container); color: var(--on-surface); }
     .chip.error { background: var(--error-container); color: var(--on-error-container); }
 
-    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .md3-tonal, .md3-filled, .md3-text {
       min-height: 44px;
       border: none;
@@ -167,13 +167,13 @@
     .md3-danger { background: var(--error-container); color: var(--on-error-container); }
     .md3-tonal:disabled, .md3-filled:disabled, .md3-text:disabled { opacity: 0.45; pointer-events: none; }
 
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .info-card {
-      min-height: 96px;
-      padding: 16px;
+      min-height: 88px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       background: var(--surface-high);
       border-radius: 14px;
     }
@@ -203,8 +203,9 @@
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      margin: 24px 0 4px;
+      margin: 8px 0 0;
     }
+    .section-pill:first-child { margin-top: 0; }
     .list-container {
       width: 100%;
       border-radius: var(--large);
@@ -214,16 +215,18 @@
       overflow: clip;
     }
     .list-item {
-      min-height: 64px;
+      min-height: 56px;
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       background: var(--surface-high);
-      padding: 14px 16px;
+      padding: 12px 16px;
       border-radius: 12px;
     }
-    .list-item-content { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-    .toggle-text { font-size: 1rem; font-weight: 700; line-height: 1.3; }
+    .list-item-content { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .list-item-content .supporting-text { flex-basis: 100%; margin-top: 4px; }
+    .toggle-text { font-size: 0.9375rem; font-weight: 700; line-height: 1.3; }
     .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     .select-shell, .field, .textarea {
@@ -281,48 +284,52 @@
 
     .nav-bar {
       position: fixed;
-      bottom: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 6px;
-      border-radius: var(--full);
-      background: var(--surface-high);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.28);
+      bottom: 0;
+      left: 0;
+      right: 0;
       z-index: 30;
-      max-width: calc(100vw - 20px);
-      overflow-x: auto;
+      display: flex;
+      align-items: stretch;
+      justify-content: space-around;
+      height: 64px;
+      background: var(--surface-high);
+      border-top: 1px solid var(--surface-highest);
+      padding: 0;
     }
     .nav-tab {
+      flex: 1;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 0;
-      padding: 12px 18px;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 0;
       border: none;
       background: transparent;
-      border-radius: var(--full);
       color: var(--on-variant);
-      white-space: nowrap;
       cursor: pointer;
+      position: relative;
     }
-    .nav-tab.active {
-      gap: 10px;
-      padding: 12px 24px 12px 18px;
-      background: var(--secondary-container);
-      color: var(--on-secondary-container);
+    .nav-tab.active { color: var(--primary); }
+    .nav-tab.active::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 48px;
+      height: 3px;
+      border-radius: 0 0 3px 3px;
+      background: var(--primary);
     }
-    .nav-icon { width: 20px; height: 20px; flex-shrink: 0; }
+    .nav-icon { width: 22px; height: 22px; flex-shrink: 0; }
     .nav-label {
-      max-width: 0;
-      opacity: 0;
-      overflow: hidden;
-      font-size: 0.9375rem;
+      font-size: 0.6875rem;
       font-weight: 700;
-      transition: opacity 0.2s ease 0.08s;
+      letter-spacing: 0.02em;
+      opacity: 0.85;
     }
-    .nav-tab.active .nav-label { max-width: 160px; opacity: 1; }
+    .nav-tab.active .nav-label { opacity: 1; }
 
     .modal-backdrop {
       position: fixed;
@@ -394,17 +401,7 @@
       .field-full { grid-column: auto; }
       .hero-card__body { align-items: flex-start; }
       .app-title { font-size: 1.08rem; }
-      .nav-label { display: none; }
-      .nav-tab.active { padding: 12px 18px; }
     }
-    .page-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 4px;
-    }
-    .page-header svg { width: 22px; height: 22px; color: var(--primary); flex-shrink: 0; }
-    .page-header h2 { margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--on-surface); }
   </style>
 </head>
 <body>
@@ -418,10 +415,6 @@
     <main id="pages">
       <!-- HOME -->
       <section id="page-home">
-        <div class="page-header">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <h2>Home</h2>
-        </div>
         <div class="card hero-card">
           <div class="hero-card__body">
             <div class="hero-icon" id="heroIcon">SSH</div>
@@ -464,24 +457,15 @@
 
       <!-- PROFILES -->
       <section id="page-profiles" hidden>
-        <div class="page-header">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-          <h2>Profiles</h2>
-        </div>
         <div class="button-row">
           <button class="md3-filled" onclick="openProfileEditor('')">New Profile</button>
           <button class="md3-tonal" onclick="loadProfiles()">Refresh Profiles</button>
         </div>
-        <h2 class="section-pill">Profiles</h2>
         <div class="list-container" id="profilesList"></div>
       </section>
 
       <!-- RUNTIME -->
       <section id="page-runtime" hidden>
-        <div class="page-header">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          <h2>Runtime</h2>
-        </div>
         <h2 class="section-pill">Details</h2>
         <div class="info-grid">
           <div class="card info-card primary">
@@ -533,104 +517,94 @@
 
       <!-- SETTINGS -->
       <section id="page-settings" hidden>
-        <div class="page-header">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          <h2>Settings</h2>
-        </div>
         <h2 class="section-pill">DNS</h2>
         <div class="list-container">
           <div class="list-item">
-            <div class="li-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
-            <div class="list-item-content" style="flex:1">
+            <div class="li-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
+            <div class="list-item-content">
               <div class="toggle-text">DNS Mode</div>
-              <span class="supporting-text">Applies to SSHCustom endpoint resolution. Device DNS is unaffected.</span>
             </div>
-            <select id="dnsMode" class="select-shell" style="max-width:220px">
+            <select id="dnsMode" class="select-shell" style="max-width:180px">
               <option value="device">Device default</option>
               <option value="google">Google DNS</option>
               <option value="cloudflare">Cloudflare DNS</option>
               <option value="custom">Custom DNS</option>
             </select>
+            <span class="supporting-text" style="width:100%">Applies to SSHCustom endpoint resolution. Device DNS is unaffected.</span>
           </div>
           <div class="list-item" id="customDnsRow" hidden>
-            <div class="li-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
-            <div class="list-item-content" style="flex:1">
+            <div class="li-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+            <div class="list-item-content">
               <div class="toggle-text">Custom Resolvers</div>
-              <input id="customDnsServers" class="field" placeholder="1.1.1.1, 8.8.8.8">
             </div>
+            <input id="customDnsServers" class="field" placeholder="1.1.1.1, 8.8.8.8" style="width:100%">
           </div>
         </div>
 
         <h2 class="section-pill">Sharing</h2>
         <div class="list-container">
           <div class="list-item">
-            <div class="li-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div>
-            <div class="list-item-content" style="flex:1">
+            <div class="li-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div>
+            <div class="list-item-content">
               <div class="toggle-text">Share Hotspot TCP Tunnel</div>
-              <span class="supporting-text">Tether IPv4 TCP through SSHCustom for connected clients.</span>
             </div>
-            <div class="spacer"></div>
             <button id="hotspotSwitch" class="switch" onclick="toggleHotspot()" aria-label="Toggle hotspot"></button>
+            <span class="supporting-text" style="width:100%">Tether IPv4 TCP through SSHCustom for connected clients.</span>
           </div>
           <div class="list-item">
-            <div class="li-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div class="li-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
             <div class="list-item-content">
               <div class="toggle-text">Transparent IPv4 TCP</div>
-              <span class="supporting-text" id="transparentMeta">iptables REDIRECT status unavailable</span>
             </div>
+            <span class="supporting-text" style="width:100%" id="transparentMeta">iptables REDIRECT status unavailable</span>
           </div>
           <div class="list-item">
-            <div class="li-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div>
+            <div class="li-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div>
             <div class="list-item-content">
               <div class="toggle-text">SOCKS5 Local Proxy</div>
-              <span class="supporting-text" id="socksMeta">SOCKS status unavailable</span>
             </div>
+            <span class="supporting-text" style="width:100%" id="socksMeta">SOCKS status unavailable</span>
           </div>
         </div>
         <h2 class="section-pill">Boot</h2>
         <div class="list-container">
           <div class="list-item">
-            <div class="li-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 11-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></div>
-            <div class="list-item-content" style="flex:1">
+            <div class="li-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 11-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></div>
+            <div class="list-item-content">
               <div class="toggle-text">Autostart on Boot</div>
-              <span class="supporting-text">Wait for connectivity (cap 30s) then start the daemon automatically. Off by default.</span>
             </div>
-            <div class="spacer"></div>
             <button id="autostartSwitch" class="switch" onclick="toggleAutostart()" aria-label="Toggle autostart"></button>
+            <span class="supporting-text" style="width:100%">Wait for connectivity (cap 30s) then start the daemon automatically.</span>
           </div>
         </div>
 
-        <button class="md3-filled" onclick="saveNetwork()" style="margin-top:20px">Apply &amp; Restart</button>
+        <button class="md3-filled" onclick="saveNetwork()" style="margin-top:8px">Apply &amp; Restart</button>
 
         <h2 class="section-pill">About</h2>
-        <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div class="card" style="padding:20px;display:flex;flex-direction:column;gap:14px">
           <div class="about-row">
-            <div class="about-mark">SC</div>
+            <div class="about-mark"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17L10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
             <div style="flex:1;min-width:0">
-              <p class="hero-title">SSHCustom-Magisk</p>
-              <p class="supporting-text" id="aboutVersion">version --</p>
+              <p class="hero-title" style="margin:0">SSHCustom-Magisk</p>
+              <p class="supporting-text" id="aboutVersion" style="margin:2px 0 0">version --</p>
             </div>
           </div>
-          <p class="supporting-text">
-            Built by <strong>GoodyOG</strong>. SSH-tunnel routing for rooted Android via Magisk and KernelSU.
-          </p>
-          <div class="chip-row" style="flex-wrap:wrap;gap:8px">
+          <p class="supporting-text" style="margin:0">SSH-tunnel routing for rooted Android.<br>Built by <strong>GoodyOG</strong>.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
             <a class="chip primary about-link" href="https://github.com/GoodyOG/SSHCustom_Magisk" target="_blank" rel="noopener">Repository</a>
             <a class="chip about-link" href="https://github.com/GoodyOG/SSHCustom_Magisk/issues" target="_blank" rel="noopener">Issues</a>
             <a class="chip about-link" href="https://github.com/GoodyOG/SSHCustom_Magisk/releases" target="_blank" rel="noopener">Releases</a>
           </div>
-          <p class="supporting-text" style="margin:0">
-            Licensed under Apache-2.0.
-          </p>
+          <p class="supporting-text" style="margin:0;font-size:0.75rem;opacity:0.7">Licensed under Apache-2.0</p>
         </div>
       </section>
     </main>
 
     <nav class="nav-bar" aria-label="Main navigation">
-      <button class="nav-tab active" data-page="home" onclick="showPage('home')"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></button>
-      <button class="nav-tab" data-page="profiles" onclick="showPage('profiles')"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span class="nav-label">Profiles</span></button>
-      <button class="nav-tab" data-page="runtime" onclick="showPage('runtime')"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nav-label">Runtime</span></button>
-      <button class="nav-tab" data-page="settings" onclick="showPage('settings')"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span class="nav-label">Settings</span></button>
+      <button class="nav-tab active" data-page="home" onclick="showPage('home')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></button>
+      <button class="nav-tab" data-page="profiles" onclick="showPage('profiles')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span class="nav-label">Profiles</span></button>
+      <button class="nav-tab" data-page="runtime" onclick="showPage('runtime')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nav-label">Runtime</span></button>
+      <button class="nav-tab" data-page="settings" onclick="showPage('settings')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span class="nav-label">Settings</span></button>
     </nav>
   </div>
 
@@ -885,8 +859,14 @@
     async function controlRuntime(action) {
       try {
         await postV1('/control', { action }, 10000);
-        toast(action === 'stop' ? 'Stopping and cleaning rules...' : 'Restarting tunnel...');
-        setTimeout(loadStatus, 2500);
+        if (action === 'restart') {
+          toast('Restarting tunnel...');
+          showRestarting();
+          await waitForDaemon();
+        } else {
+          toast('Stopping and cleaning rules...');
+          setTimeout(loadStatus, 2500);
+        }
       } catch (e) {
         toast('Control failed: ' + e.message, 'error');
       }
@@ -928,8 +908,9 @@
         const dns = { mode };
         if (mode === 'custom') dns.servers = $('customDnsServers').value.split(',').map(s => s.trim()).filter(Boolean);
         await postV1('/config', { dns, hotspot: { enabled, tcp: enabled, dns: false }, restart: true }, 12000);
-        toast('Network settings saved. Restarting to apply...');
-        setTimeout(loadStatus, 4000);
+        toast('Network settings saved. Restarting...');
+        showRestarting();
+        await waitForDaemon();
       } catch (e) {
         toast('Network save failed: ' + e.message, 'error');
       }
@@ -958,7 +939,7 @@
         return `<div class="list-item">
           <div class="li-icon">P${i + 1}</div>
           <div class="list-item-content" style="flex:1">
-            <div class="toggle-text truncate">${esc(p.name || p.id)}</div>
+            <div class="toggle-text">${esc(p.name || p.id)}</div>
             <span class="supporting-text truncate">${esc(host)} - ${esc(modeName(p.transport && p.transport.mode))}</span>
           </div>
           ${active ? '<span class="chip primary">active</span>' : `<button class="md3-tonal" onclick="selectProfile('${esc(p.id)}')">Use</button>`}
@@ -1053,11 +1034,51 @@
         };
         await postV1('/profile/save', req, 12000);
         closeProfileEditor();
-        toast(restart ? 'Profile saved. Restarting...' : 'Profile saved.');
+        if (restart) {
+          toast('Profile saved. Restarting tunnel...');
+          showRestarting();
+          await waitForDaemon();
+        } else {
+          toast('Profile saved.');
+        }
         await loadProfiles();
       } catch (e) {
         toast('Profile save failed: ' + e.message, 'error');
       }
+    }
+
+    function showRestarting() {
+      $('statusDot').className = 'status-dot connecting';
+      $('statusText').textContent = 'restarting';
+      $('heroIcon').textContent = '...';
+      $('heroTitle').textContent = 'Restarting...';
+      $('heroSubtitle').textContent = 'Applying new profile and reconnecting.';
+      $('heroChips').innerHTML = '<span class="chip warn">restarting</span>';
+    }
+
+    async function waitForDaemon() {
+      // The daemon restarts itself via sshcustom.sh (kills process, starts new one).
+      // Wait up to 15s for it to come back online.
+      await new Promise(r => setTimeout(r, 2000)); // give it time to die + restart
+      for (let i = 0; i < 13; i++) {
+        try {
+          const data = await v1('/status', { timeout: 3000 });
+          // Daemon is back — refresh everything
+          statusData = data.runtime;
+          configData = data.config;
+          pathsData = data.paths || {};
+          renderStatus(data);
+          renderPaths();
+          renderAbout();
+          toast('Tunnel restarted successfully.');
+          return;
+        } catch (_) {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+      // Timed out but daemon might still be starting
+      toast('Daemon restarting — check status in a moment.');
+      loadStatus();
     }
 
     function setLogKind(kind) {
