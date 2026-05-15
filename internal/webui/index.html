@@ -85,7 +85,7 @@
     #pages {
       width: min(100%, 860px);
       margin: 0 auto;
-      padding: 16px 16px 80px;
+      padding: 16px 16px 96px;
     }
     section:not([hidden]) {
       display: flex;
@@ -109,7 +109,7 @@
       display: flex;
       align-items: center;
       gap: 16px;
-      padding: 16px;
+      padding: 20px;
     }
     .hero-icon, .li-icon {
       width: 44px;
@@ -178,6 +178,12 @@
       border-radius: 14px;
     }
     .info-card.primary { background: var(--primary-container); color: var(--on-primary-container); }
+    .info-card__icon {
+      width: 20px;
+      height: 20px;
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
     .info-label { margin: 0; color: inherit; font-size: 0.875rem; font-weight: 700; }
     .info-value {
       margin: 0;
@@ -284,52 +290,56 @@
 
     .nav-bar {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 30;
-      display: flex;
-      align-items: stretch;
-      justify-content: space-around;
-      height: 64px;
-      background: var(--surface-high);
-      border-top: 1px solid var(--surface-highest);
-      padding: 0;
-    }
-    .nav-tab {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      padding: 8px 0;
-      border: none;
-      background: transparent;
-      color: var(--on-variant);
-      cursor: pointer;
-      position: relative;
-    }
-    .nav-tab.active { color: var(--primary); }
-    .nav-tab.active::before {
-      content: "";
-      position: absolute;
-      top: 0;
+      bottom: 16px;
       left: 50%;
       transform: translateX(-50%);
-      width: 48px;
-      height: 3px;
-      border-radius: 0 0 3px 3px;
-      background: var(--primary);
+      width: fit-content;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 6px;
+      background: var(--surface-high);
+      border-radius: 9999px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
     }
+    .nav-tab {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      border-radius: 9999px;
+      cursor: pointer;
+      color: var(--on-variant);
+      -webkit-tap-highlight-color: transparent;
+      flex-direction: row;
+    }
+    .nav-tab.active {
+      color: var(--primary);
+      background: var(--secondary-container);
+      gap: 8px;
+      padding: 12px 20px 12px 16px;
+    }
+    .nav-tab.active::before { display: none; }
     .nav-icon { width: 22px; height: 22px; flex-shrink: 0; }
     .nav-label {
-      font-size: 0.6875rem;
+      overflow: hidden;
+      white-space: nowrap;
+      max-width: 0;
+      opacity: 0;
+      font-size: 0.8125rem;
       font-weight: 700;
       letter-spacing: 0.02em;
-      opacity: 0.85;
+      transition: max-width 0.3s ease, opacity 0.2s ease 0.08s;
     }
-    .nav-tab.active .nav-label { opacity: 1; }
+    .nav-tab.active .nav-label {
+      max-width: 100px;
+      opacity: 1;
+    }
 
     .modal-backdrop {
       position: fixed;
@@ -397,7 +407,7 @@
 
     @media (max-width: 620px) {
       #pages { padding-inline: 12px; }
-      .info-grid, .button-row, .field-grid { grid-template-columns: 1fr; }
+      .info-grid, .field-grid { grid-template-columns: 1fr; }
       .field-full { grid-column: auto; }
       .hero-card__body { align-items: flex-start; }
       .app-title { font-size: 1.08rem; }
@@ -433,21 +443,25 @@
 
         <div class="info-grid">
           <div class="card info-card primary">
+            <svg class="info-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
             <p class="info-label">Tunnel Exit IP</p>
             <p class="info-value" id="tunnelIp">Unavailable</p>
             <span class="supporting-text" id="tunnelIpMeta">Waiting for tunnel lookup</span>
           </div>
           <div class="card info-card">
+            <svg class="info-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
             <p class="info-label">Device IP</p>
             <p class="info-value" id="deviceIp">--</p>
             <span class="supporting-text" id="deviceIpMeta">Local interface address</span>
           </div>
           <div class="card info-card">
+            <svg class="info-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <p class="info-label">Runtime</p>
             <p class="info-value" id="runtimeValue">--</p>
             <span class="supporting-text" id="runtimeMeta">No active session</span>
           </div>
           <div class="card info-card">
+            <svg class="info-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             <p class="info-label">Performance</p>
             <p class="info-value" id="perfValue">--</p>
             <span class="supporting-text" id="perfMeta">CPU and memory unavailable</span>
