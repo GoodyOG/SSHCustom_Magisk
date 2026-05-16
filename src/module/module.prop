@@ -1,6 +1,6 @@
 id=sshcustom
 name=SSHCustom-Magisk
-version=v2.1.8
+version=v2.2.0-rc1
 versionCode=20108
 author=GoodyOG
 updateJson=https://raw.githubusercontent.com/GoodyOG/SSHCustom-Magisk/main/src/module/update.json
