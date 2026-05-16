@@ -918,7 +918,7 @@
       $('memoryValue').textContent = fmtBytes(s.memory_rss_bytes);
       $('memoryMeta').textContent = 'system memory ' + (s.system_mem_used_percent || 0).toFixed(0) + '% used';
       $('poolValue').textContent = (s.pool_healthy || 0) + '/' + (s.pool_size || 0);
-      $('poolMeta').textContent = (s.pool_reconnecting ? s.pool_reconnecting + ' reconnecting' : 'all healthy') + (s.pool_last_error ? ' / ' + s.pool_last_error : '');
+      $('poolMeta').textContent = 'all healthy' + (s.pool_last_error ? ' / ' + s.pool_last_error : '');
       $('streamsValue').textContent = String(s.pool_streams || 0);
       $('streamsMeta').textContent = 'target ' + (s.pool_max_streams || '--') + ' streams per SSH';
       $('routeValue').textContent = s.interface || '--';
