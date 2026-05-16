@@ -505,6 +505,7 @@ func run(args []string) {
 	cfgPath := fs.String("c", "/data/adb/sshcustom/config.json", "config path")
 	profPath := fs.String("p", "/data/adb/sshcustom/profiles.json", "profiles path")
 	workDir := fs.String("w", "/data/adb/sshcustom", "work dir")
+	idleMode := fs.Bool("idle", false, "start in idle mode (API only, no tunnel)")
 	_ = fs.Parse(args)
 
 	runDir := filepath.Join(*workDir, "run")
@@ -598,6 +599,10 @@ func run(args []string) {
 		return nil
 	}
 
+	// Forward declarations for tunnel lifecycle (defined after HTTP server setup)
+	var startTunnel func() error
+	var stopTunnel func()
+
 	mux := http.NewServeMux()
 	// Only the v1 API surface is registered. The legacy /api/{status,
 	// profiles, profile/*, control, config, health, logs/*} endpoints from
@@ -652,7 +657,7 @@ func run(args []string) {
 			}
 			restartPending := false
 			if req.Restart && restartRequired {
-				go func() { _ = scheduleControl(*workDir, "restart") }()
+				go func() { stopTunnel(); time.Sleep(500 * time.Millisecond); _ = startTunnel() }()
 				restartPending = true
 			}
 			writeV1OK(w, apiv1.ConfigUpdateResponse{
@@ -721,7 +726,7 @@ func run(args []string) {
 			return
 		}
 		if req.Restart {
-			go func() { _ = scheduleControl(*workDir, "restart") }()
+			go func() { stopTunnel(); time.Sleep(500 * time.Millisecond); _ = startTunnel() }()
 		}
 		writeV1OK(w, map[string]any{"selected_id": req.SelectedID, "restart": req.Restart})
 	})
@@ -800,7 +805,7 @@ func run(args []string) {
 			return
 		}
 		if req.Restart {
-			go func() { _ = scheduleControl(*workDir, "restart") }()
+			go func() { stopTunnel(); time.Sleep(500 * time.Millisecond); _ = startTunnel() }()
 		}
 		writeV1OK(w, map[string]any{"selected_id": req.ID, "restart": req.Restart})
 	})
@@ -816,11 +821,35 @@ func run(args []string) {
 			writeV1Error(w, http.StatusBadRequest, err)
 			return
 		}
-		if err := scheduleControl(*workDir, req.Action); err != nil {
-			writeV1Error(w, http.StatusBadRequest, err)
-			return
+		switch strings.TrimSpace(strings.ToLower(req.Action)) {
+		case "start":
+			if err := startTunnel(); err != nil {
+				writeV1Error(w, http.StatusConflict, err)
+				return
+			}
+			writeV1OK(w, map[string]any{"action": "start"})
+		case "stop":
+			stopTunnel()
+			writeV1OK(w, map[string]any{"action": "stop"})
+		case "restart":
+			stopTunnel()
+			// Brief pause for iptables cleanup to finish
+			time.Sleep(500 * time.Millisecond)
+			if err := startTunnel(); err != nil {
+				writeV1Error(w, http.StatusConflict, err)
+				return
+			}
+			writeV1OK(w, map[string]any{"action": "restart"})
+		case "stop-module":
+			// Full module stop: kills daemon process (used by action.sh)
+			writeV1OK(w, map[string]any{"action": "stop-module"})
+			go func() {
+				time.Sleep(300 * time.Millisecond)
+				_ = scheduleControl(*workDir, "stop")
+			}()
+		default:
+			writeV1Error(w, http.StatusBadRequest, fmt.Errorf("unsupported action: %s (use start, stop, restart, or stop-module)", req.Action))
 		}
-		writeV1OK(w, map[string]any{"action": req.Action})
 	})
 	mux.HandleFunc("/api/v1/logs/core", func(w http.ResponseWriter, r *http.Request) { serveLog(w, filepath.Join(runDir, "core.log")) })
 	mux.HandleFunc("/api/v1/logs/control", func(w http.ResponseWriter, r *http.Request) { serveLog(w, filepath.Join(runDir, "control.log")) })
@@ -994,15 +1023,122 @@ func run(args []string) {
 
 	go startMetricsSampler(ctx, state)
 
-	// Start the connection manager directly. "Save, Use & Restart" uses
-	// scheduleControl("restart") which kills and restarts the entire daemon
-	// process — the proven mechanism that works reliably on all Android devices.
-	sp = selectedProfile(pf)
-	if sp != nil {
-		log.Printf("starting connection manager with profile %q (mode=%s)", sp.Name, sp.Transport.Mode)
-		go connectionManager(ctx, cfg, *sp, state)
+	// --- Tunnel lifecycle management ---
+	// The daemon always stays alive serving the WebUI/API. The tunnel (SSH pool,
+	// SOCKS, transparent proxy) is controlled separately. When idle, the WebUI
+	// shows "Start" button. When active, it shows "Stop" and "Restart".
+	//
+	// tunnelCtx/tunnelCancel control the connectionManager goroutine.
+	// tunnelRunning tracks whether the tunnel goroutine is active.
+	var tunnelMu sync.Mutex
+	var tunnelCancel context.CancelFunc
+	tunnelRunning := false
+
+	startTunnel = func() error {
+		tunnelMu.Lock()
+		defer tunnelMu.Unlock()
+		if tunnelRunning {
+			return fmt.Errorf("tunnel already running")
+		}
+		// Re-read profiles in case they changed
+		var freshPf ProfilesFile
+		if err := readJSON(*profPath, &freshPf); err != nil {
+			return fmt.Errorf("read profiles: %w", err)
+		}
+		freshSp := selectedProfile(freshPf)
+		if freshSp == nil {
+			return fmt.Errorf("no selected profile")
+		}
+		currentCfg := getConfig()
+		tunnelCtx, cancel := context.WithCancel(ctx)
+		tunnelCancel = cancel
+		tunnelRunning = true
+		// Update state with fresh profile info
+		state.set(func() {
+			state.SelectedProfile = freshSp.Name
+			state.SelectedMode = freshSp.Transport.Mode
+			state.TransportChain = strings.Join(freshSp.Transport.Chain, " -> ")
+			state.PayloadEnabled = freshSp.Transport.Payload.Enabled
+			state.State = "STARTING"
+			state.Running = true
+			state.Connected = false
+			state.SSHAuthenticated = false
+			state.TransportReady = false
+			state.LastEvent = "tunnel starting"
+			state.LastError = ""
+			state.Attempt = 0
+		})
+		log.Printf("starting tunnel with profile %q (mode=%s)", freshSp.Name, freshSp.Transport.Mode)
+		go func() {
+			connectionManager(tunnelCtx, currentCfg, *freshSp, state)
+			// connectionManager returned — tunnel stopped
+			tunnelMu.Lock()
+			tunnelRunning = false
+			tunnelCancel = nil
+			tunnelMu.Unlock()
+			state.set(func() {
+				state.State = "IDLE"
+				state.Running = false
+				state.Connected = false
+				state.SSHAuthenticated = false
+				state.TransportReady = false
+			})
+			log.Printf("tunnel stopped, daemon remains in idle mode")
+		}()
+		return nil
+	}
+
+	stopTunnel = func() {
+		tunnelMu.Lock()
+		defer tunnelMu.Unlock()
+		if !tunnelRunning || tunnelCancel == nil {
+			return
+		}
+		log.Printf("stopping tunnel (daemon stays alive)")
+		tunnelCancel()
+		tunnelCancel = nil
+		tunnelRunning = false
+		// Clean iptables rules
+		go func() {
+			cleanScript := filepath.Join(*workDir, "net_clean.sh")
+			if _, err := os.Stat(cleanScript); err == nil {
+				cmd := exec.Command("/system/bin/sh", cleanScript)
+				_ = cmd.Run()
+			}
+		}()
+		state.set(func() {
+			state.State = "IDLE"
+			state.Running = false
+			state.Connected = false
+			state.SSHAuthenticated = false
+			state.TransportReady = false
+			state.LastEvent = "tunnel stopped by user"
+			state.LastError = ""
+		})
+	}
+
+	// Determine whether to auto-start the tunnel
+	shouldAutoStart := !*idleMode
+	if shouldAutoStart {
+		sp = selectedProfile(pf)
+		if sp != nil {
+			log.Printf("auto-starting tunnel with profile %q (mode=%s)", sp.Name, sp.Transport.Mode)
+			_ = startTunnel()
+		} else {
+			log.Printf("no selected profile, staying in idle mode")
+			state.set(func() {
+				state.State = "IDLE"
+				state.Running = false
+			})
+		}
 	} else {
-		log.Printf("no selected profile, connection manager not started")
+		log.Printf("started in idle mode (--idle flag); tunnel not started")
+		state.set(func() {
+			state.State = "IDLE"
+			state.Running = false
+			state.Connected = false
+			state.LastEvent = "daemon ready, tunnel idle — start from WebUI"
+		})
 	}
 
 	<-ctx.Done()

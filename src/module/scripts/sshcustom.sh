@@ -91,10 +91,13 @@ start_daemon() {
   [ -f "$CONFIG" ] || { echo "missing config: $CONFIG"; return 1; }
   [ -f "$PROFILES" ] || { echo "missing profiles: $PROFILES"; return 1; }
 
-  nohup "$BIN" run -c "$CONFIG" -p "$PROFILES" -w "$WORK_DIR" >/dev/null 2>&1 &
+  EXTRA_FLAGS=""
+  [ "$1" = "--idle" ] && EXTRA_FLAGS="--idle"
+
+  nohup "$BIN" run -c "$CONFIG" -p "$PROFILES" -w "$WORK_DIR" $EXTRA_FLAGS >/dev/null 2>&1 &
   PID="$!"
   echo "$PID" > "$PID_FILE"
-  log "daemon start requested pid=$PID"
+  log "daemon start requested pid=$PID flags=$EXTRA_FLAGS"
 
   for i in 1 2 3 4 5; do
     if ! pid_alive "$PID"; then
@@ -157,6 +160,25 @@ stop_module() {
   echo "sshcustom module stopped and network rules cleaned"
 }
 
+start_idle_module() {
+  echo "starting sshcustom daemon in idle mode (WebUI only)..."
+  log "start-idle: daemon only, no tunnel"
+  mkdir -p "$RUN_DIR"
+  if is_running && api_alive; then
+    echo "sshcustom runtime already running"
+    return 0
+  fi
+  stop_runtime
+  "$WORK_DIR/net_clean.sh" >> "$CONTROL_LOG" 2>&1
+  if start_daemon --idle; then
+    set_desc stopped
+    echo "sshcustom daemon started in idle mode (WebUI at http://127.0.0.1:9190)"
+    return 0
+  fi
+  echo "sshcustom idle start failed"
+  return 1
+}
+
 network_pause() {
   [ -f "$ENABLED_FILE" ] || exit 0
   log "network pause"
@@ -213,6 +235,7 @@ boot_reset() {
 
 case "$1" in
   start) start_module ;;
+  start-idle) start_idle_module ;;
   stop) stop_module ;;
   restart) stop_module; sleep 2; start_module ;;
   status) status_full ;;
@@ -221,5 +244,5 @@ case "$1" in
   network-pause) network_pause ;;
   network-resume) network_resume ;;
   boot-reset) boot_reset ;;
-  *) echo "Usage: $0 {start|stop|restart|status|clean|network-pause|network-resume|boot-reset}"; exit 2 ;;
+  *) echo "Usage: $0 {start|start-idle|stop|restart|status|clean|network-pause|network-resume|boot-reset}"; exit 2 ;;
 esac
