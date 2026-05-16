@@ -446,9 +446,10 @@
           </div>
         </div>
 
-        <div class="button-row">
-          <button class="md3-filled" onclick="controlRuntime('restart')">Restart Tunnel</button>
-          <button class="md3-tonal md3-danger" onclick="controlRuntime('stop')">Stop and Clean</button>
+        <div class="button-row" id="tunnelButtons">
+          <button class="md3-filled" id="btnStart" onclick="controlRuntime('start')" style="display:none">Start Tunnel</button>
+          <button class="md3-filled" id="btnRestart" onclick="controlRuntime('restart')">Restart Tunnel</button>
+          <button class="md3-tonal md3-danger" id="btnStop" onclick="controlRuntime('stop')">Stop Tunnel</button>
         </div>
 
         <div class="info-grid">
@@ -849,12 +850,16 @@
       const cfg = data.config || {};
       const connected = !!(s.connected && s.ssh_authenticated);
       const busy = !!(s.running && !connected);
+      const idle = !s.running && s.state === 'IDLE';
       $('statusDot').className = 'status-dot' + (connected ? ' connected' : busy ? ' connecting' : '');
-      $('statusText').textContent = connected ? 'connected' : busy ? 'connecting' : 'offline';
+      $('statusText').textContent = connected ? 'connected' : busy ? 'connecting' : idle ? 'idle' : 'offline';
       $('heroIcon').textContent = connected ? 'ON' : busy ? '...' : 'OFF';
-      $('heroTitle').textContent = connected ? 'Tunnel Connected' : busy ? (s.state || 'Connecting') : 'Daemon offline';
-      $('heroSubtitle').textContent = s.last_error || s.last_event || (connected ? 'SSH pool healthy ' + (s.pool_healthy||0) + '/' + (s.pool_size||0) : 'Start SSHCustom-Magisk from the module action button.');
+      $('heroTitle').textContent = connected ? 'Tunnel Connected' : busy ? (s.state || 'Connecting') : idle ? 'Tunnel Idle' : 'Daemon offline';
+      $('heroSubtitle').textContent = s.last_error || s.last_event || (connected ? 'SSH pool healthy ' + (s.pool_healthy||0) + '/' + (s.pool_size||0) : idle ? 'Tap Start Tunnel to connect.' : 'Start SSHCustom-Magisk from the module action button.');
       $('heroChips').innerHTML = '';
+
+      // Show Start button when idle, Restart+Stop when tunnel is active
+      updateButtons(s.running);
 
       // Local Device IP comes from the daemon's pure-Go route probe (UDP connect
       // trick to read LocalAddr without sending a packet). No external call.
@@ -890,8 +895,24 @@
       $('statusText').textContent = 'offline';
       $('heroIcon').textContent = 'OFF';
       $('heroTitle').textContent = 'Daemon offline';
-      $('heroSubtitle').textContent = 'Start SSHCustom-Magisk from the Magisk or KernelSU action button.';
+      $('heroSubtitle').textContent = 'Module is not running. Enable it in Magisk/KSU Manager.';
       $('heroChips').innerHTML = '';
+      updateButtons(false);
+    }
+
+    function updateButtons(tunnelActive) {
+      const btnStart = $('btnStart');
+      const btnRestart = $('btnRestart');
+      const btnStop = $('btnStop');
+      if (tunnelActive) {
+        btnStart.style.display = 'none';
+        btnRestart.style.display = '';
+        btnStop.style.display = '';
+      } else {
+        btnStart.style.display = '';
+        btnRestart.style.display = 'none';
+        btnStop.style.display = 'none';
+      }
     }
 
     function renderPaths() {
@@ -918,13 +939,17 @@
     async function controlRuntime(action) {
       try {
         await postV1('/control', { action }, 10000);
-        if (action === 'restart') {
+        if (action === 'start') {
+          toast('Starting tunnel...');
+          updateButtons(true);
+          setTimeout(loadStatus, 2000);
+        } else if (action === 'restart') {
           toast('Restarting tunnel...');
           showRestarting();
-          await waitForDaemon();
-        } else {
-          toast('Stopping and cleaning rules...');
-          setTimeout(loadStatus, 2500);
+          setTimeout(loadStatus, 3000);
+        } else if (action === 'stop') {
+          toast('Stopping tunnel...');
+          setTimeout(loadStatus, 2000);
         }
       } catch (e) {
         toast('Control failed: ' + e.message, 'error');
@@ -1131,13 +1156,11 @@
     }
 
     async function waitForDaemon() {
-      // The daemon restarts itself via sshcustom.sh (kills process, starts new one).
-      // Wait up to 15s for it to come back online.
-      await new Promise(r => setTimeout(r, 2000)); // give it time to die + restart
-      for (let i = 0; i < 13; i++) {
+      // Daemon stays alive now; just wait for tunnel state to update.
+      await new Promise(r => setTimeout(r, 2000));
+      for (let i = 0; i < 10; i++) {
         try {
           const data = await v1('/status', { timeout: 3000 });
-          // Daemon is back — refresh everything
           statusData = data.runtime;
           configData = data.config;
           pathsData = data.paths || {};
@@ -1145,16 +1168,12 @@
           renderPaths();
           renderAbout();
           toast('Tunnel restarted successfully.');
-          // Reconnect SSE since the old connection died with the daemon
-          startEvents();
           return;
         } catch (_) {
           await new Promise(r => setTimeout(r, 1000));
         }
       }
-      // Timed out but daemon might still be starting
-      toast('Daemon restarting — check status in a moment.');
-      startEvents();
+      toast('Tunnel restarting — check status in a moment.');
     }
 
     function setLogKind(kind) {

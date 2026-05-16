@@ -78,6 +78,11 @@ start_watchdog() {
 }
 
 start_daemon() {
+  IDLE_FLAG=""
+  if [ "$1" = "--idle" ]; then
+    IDLE_FLAG="--idle"
+  fi
+
   if is_running && api_alive; then
     echo "sshcustom runtime already running with pid: $(daemon_pid)"
     return 0
@@ -91,10 +96,14 @@ start_daemon() {
   [ -f "$CONFIG" ] || { echo "missing config: $CONFIG"; return 1; }
   [ -f "$PROFILES" ] || { echo "missing profiles: $PROFILES"; return 1; }
 
-  nohup "$BIN" run -c "$CONFIG" -p "$PROFILES" -w "$WORK_DIR" >/dev/null 2>&1 &
+  if [ -n "$IDLE_FLAG" ]; then
+    nohup "$BIN" run -c "$CONFIG" -p "$PROFILES" -w "$WORK_DIR" --idle >/dev/null 2>&1 &
+  else
+    nohup "$BIN" run -c "$CONFIG" -p "$PROFILES" -w "$WORK_DIR" >/dev/null 2>&1 &
+  fi
   PID="$!"
   echo "$PID" > "$PID_FILE"
-  log "daemon start requested pid=$PID"
+  log "daemon start requested pid=$PID idle=$IDLE_FLAG"
 
   for i in 1 2 3 4 5; do
     if ! pid_alive "$PID"; then
@@ -125,7 +134,7 @@ stop_runtime() {
 
 start_module() {
   echo "starting sshcustom module..."
-  log "manual/action start v2.0.0"
+  log "manual/action start v2.2.0"
   mkdir -p "$RUN_DIR"
   : > "$CORE_LOG"
   echo "$(date '+%Y-%m-%d %H:%M:%S') core.log reset for fresh module start" >> "$CORE_LOG"
@@ -142,6 +151,27 @@ start_module() {
   echo "sshcustom module enabled, but runtime start failed"
   set_desc stopped
   rm -f "$ENABLED_FILE"
+  return 1
+}
+
+start_idle_module() {
+  echo "starting sshcustom daemon in idle mode (WebUI only)..."
+  log "idle start v2.2.0"
+  mkdir -p "$RUN_DIR"
+  if is_running && api_alive; then
+    echo "daemon already running"
+    return 0
+  fi
+  : > "$CORE_LOG"
+  echo "$(date '+%Y-%m-%d %H:%M:%S') core.log reset for idle start" >> "$CORE_LOG"
+  rm -f "$PAUSED_FILE"
+  stop_runtime
+  if start_daemon --idle; then
+    set_desc stopped
+    echo "sshcustom daemon started in idle mode (WebUI at 127.0.0.1:9190)"
+    return 0
+  fi
+  echo "sshcustom idle start failed"
   return 1
 }
 
@@ -213,6 +243,7 @@ boot_reset() {
 
 case "$1" in
   start) start_module ;;
+  start-idle) start_idle_module ;;
   stop) stop_module ;;
   restart) stop_module; sleep 2; start_module ;;
   status) status_full ;;
@@ -221,5 +252,5 @@ case "$1" in
   network-pause) network_pause ;;
   network-resume) network_resume ;;
   boot-reset) boot_reset ;;
-  *) echo "Usage: $0 {start|stop|restart|status|clean|network-pause|network-resume|boot-reset}"; exit 2 ;;
+  *) echo "Usage: $0 {start|start-idle|stop|restart|status|clean|network-pause|network-resume|boot-reset}"; exit 2 ;;
 esac
