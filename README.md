@@ -32,7 +32,7 @@ Runs on rooted Android (Magisk or KernelSU), `arm64-v8a` and `armeabi-v7a`.
 1. Download `SSHCustom-Magisk-vX.Y.Z.zip` from [Releases](https://github.com/GoodyOG/SSHCustom-Magisk/releases/latest).
 2. Flash the ZIP via Magisk/KernelSU, reboot.
 3. The daemon starts automatically — the WebUI is always accessible after boot.
-4. Open the WebUI, configure a profile, and tap **Start Tunnel** to connect.
+4. Open the WebUI, configure a SSH profile, and tap **Start Tunnel** to connect.
 
 **Accessing the WebUI:**
 
